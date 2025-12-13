@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Search, Calendar, DollarSign } from "lucide-react"
 import { ProjectDialog } from "@/components/projects/project-dialog"
 
-interface ProjectWithClient extends Project {
-  client?: { id: string; name: string } | null
+interface ProjectWithClient extends Omit<Project, 'client'> {
+  client: { id: string; name: string } | null
 }
 
 interface ProjectsGridProps {
@@ -99,7 +99,7 @@ export function ProjectsGrid({ projects, workspaceId, clients }: ProjectsGridPro
         onOpenChange={(open) => !open && setEditingProject(null)}
         workspaceId={workspaceId}
         clients={clients}
-        project={editingProject}
+        project={editingProject as unknown as Project}
       />
     </div>
   )

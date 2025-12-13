@@ -155,3 +155,68 @@ export interface LinkClick {
   os: string | null
   clicked_at: string
 }
+
+export interface SeoKeyword {
+  id: string
+  workspace_id: string
+  keyword: string
+  url: string
+  position: number | null
+  change: number
+  volume: number | null
+  difficulty: number | null
+  status: "active" | "paused" | "archived"
+  last_updated_at: string
+  created_at: string
+}
+
+export interface SeoAudit {
+  id: string
+  workspace_id: string
+  url: string
+  score: number | null
+  issues_count: number
+  status: "running" | "completed" | "failed"
+  report: Record<string, any> | null
+  created_at: string
+}
+
+export interface Contract {
+  id: string
+  workspace_id: string
+  client_id: string
+  title: string
+  content: string | null
+  status: ContractStatus
+  value: number | null
+  start_date: string | null
+  end_date: string | null
+  signed_at: string | null
+  created_at: string
+  updated_at: string
+  client?: Client
+}
+
+export interface SocialPost {
+  id: string
+  workspace_id: string
+  platform: "twitter" | "facebook" | "linkedin" | "instagram"
+  content: string
+  media_url: string | null
+  scheduled_for: string
+  status: "draft" | "scheduled" | "published" | "failed"
+  published_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkspaceInvite {
+  id: string
+  workspace_id: string
+  email: string
+  role: string
+  status: "pending" | "accepted" | "expired"
+  invited_by: string
+  created_at: string
+  updated_at: string
+}

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Calendar, DollarSign } from "lucide-react"
 
-interface ProjectWithClient extends Project {
-  client?: { id: string; name: string } | null
+interface ProjectWithClient extends Omit<Project, 'client'> {
+  client: { id: string; name: string } | null
 }
 
 interface ProjectHeaderProps {
