@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ChatInterface } from "@/components/ai/chat-interface"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function AIPage() {
     const supabase = await createClient()
@@ -18,7 +19,20 @@ export default async function AIPage() {
         .limit(1)
         .single()
 
-    if (!membership) redirect("/onboarding")
+    if (!membership) {
+        return (
+            <div className="h-[calc(100vh-8rem)] flex flex-col">
+                <div className="mb-4">
+                    <h1 className="text-3xl font-bold tracking-tight">AI Assistant</h1>
+                    <p className="text-muted-foreground">Generate content and get help with your agency tasks</p>
+                </div>
+                <EmptyWorkspaceState
+                    title="AI Assistant Unavailable"
+                    description="You need a workspace to use the AI Assistant. Create one to get started."
+                />
+            </div>
+        )
+    }
 
     // Fetch chat history
     const { data: messages } = await supabase

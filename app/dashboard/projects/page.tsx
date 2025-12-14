@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ProjectsHeader } from "@/components/projects/projects-header"
 import { ProjectsGrid } from "@/components/projects/projects-grid"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
@@ -18,7 +19,17 @@ export default async function ProjectsPage() {
     .limit(1)
     .single()
 
-  if (!membership) redirect("/onboarding")
+  if (!membership) {
+    return (
+      <div className="space-y-6">
+        <ProjectsHeader workspaceId="" clients={[]} />
+        <EmptyWorkspaceState
+          title="No Projects Available"
+          description="You need a workspace to manage projects. Create one to get started."
+        />
+      </div>
+    )
+  }
 
   // Fetch projects with client info
   const { data: projects } = await supabase

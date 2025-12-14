@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { SeoDashboard } from "@/components/seo/seo-dashboard"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function SeoPage() {
     const supabase = await createClient()
@@ -18,7 +19,20 @@ export default async function SeoPage() {
         .limit(1)
         .single()
 
-    if (!membership) redirect("/onboarding")
+    if (!membership) {
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">SEO Tools</h1>
+                    <p className="text-muted-foreground">Track rankings and audit your sites</p>
+                </div>
+                <EmptyWorkspaceState
+                    title="SEO Tools Unavailable"
+                    description="You need a workspace to use SEO tools. Create one to get started."
+                />
+            </div>
+        )
+    }
 
     // Fetch keywords
     const { data: keywords } = await supabase

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProfileForm } from "@/components/settings/profile-form"
 import { WorkspaceForm } from "@/components/settings/workspace-form"
 import { TeamList } from "@/components/settings/team-list"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function SettingsPage() {
     const supabase = await createClient()
@@ -28,40 +29,46 @@ export default async function SettingsPage() {
         .limit(1)
         .single()
 
-    if (!membership) redirect("/onboarding")
+    // Fetch workspace details and members ONLY if membership exists
+    let workspace = null
+    let formattedMembers: any[] = []
+    let invites: any[] = []
 
-    // Get workspace details
-    const { data: workspace } = await supabase
-        .from("workspaces")
-        .select("*")
-        .eq("id", membership.workspace_id)
-        .single()
+    if (membership) {
+        // Get workspace details
+        const { data: wsData } = await supabase
+            .from("workspaces")
+            .select("*")
+            .eq("id", membership.workspace_id)
+            .single()
+        workspace = wsData
 
-    // Get team members
-    const { data: members } = await supabase
-        .from("workspace_members")
-        .select(`
-      id,
-      workspace_id,
-      role,
-      user_id,
-      created_at,
-      profile:profiles(id, full_name, email, avatar_url)
-    `)
-        .eq("workspace_id", membership.workspace_id)
+        // Get team members
+        const { data: members } = await supabase
+            .from("workspace_members")
+            .select(`
+          id,
+          workspace_id,
+          role,
+          user_id,
+          created_at,
+          profile:profiles(id, full_name, email, avatar_url)
+        `)
+            .eq("workspace_id", membership.workspace_id)
 
-    // Get invites
-    const { data: invites } = await supabase
-        .from("workspace_invites")
-        .select("*")
-        .eq("workspace_id", membership.workspace_id)
+        // Get invites
+        const { data: invitesData } = await supabase
+            .from("workspace_invites")
+            .select("*")
+            .eq("workspace_id", membership.workspace_id)
+            .eq("status", "pending")
+        invites = invitesData || []
 
-        .eq("status", "pending")
-
-    const formattedMembers = members?.map((member: any) => ({
-        ...member,
-        profile: Array.isArray(member.profile) ? member.profile[0] : member.profile,
-    }))
+        formattedMembers = members?.map((member: any) => ({
+            ...member,
+            profile: Array.isArray(member.profile) ? member.profile[0] : member.profile,
+        })) || []
+    }
 
     return (
         <div className="space-y-6">
@@ -82,16 +89,30 @@ export default async function SettingsPage() {
                 </TabsContent>
 
                 <TabsContent value="workspace" className="space-y-4">
-                    <WorkspaceForm workspace={workspace} />
+                    {membership && workspace ? (
+                        <WorkspaceForm workspace={workspace} />
+                    ) : (
+                        <EmptyWorkspaceState
+                            title="No Workspace Configuration"
+                            description="You need to create a workspace to configure settings."
+                        />
+                    )}
                 </TabsContent>
 
                 <TabsContent value="team" className="space-y-4">
-                    <TeamList
-                        workspaceId={membership.workspace_id}
-                        members={formattedMembers || []}
-                        invites={invites || []}
-                        currentUserRole={membership.role}
-                    />
+                    {membership ? (
+                        <TeamList
+                            workspaceId={membership.workspace_id}
+                            members={formattedMembers}
+                            invites={invites}
+                            currentUserRole={membership.role}
+                        />
+                    ) : (
+                        <EmptyWorkspaceState
+                            title="No Team Members"
+                            description="You need to create a workspace to invite team members."
+                        />
+                    )}
                 </TabsContent>
             </Tabs>
         </div>

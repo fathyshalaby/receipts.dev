@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ClientsTable } from "@/components/clients/clients-table"
 import { ClientsHeader } from "@/components/clients/clients-header"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function ClientsPage() {
   const supabase = await createClient()
@@ -19,7 +20,17 @@ export default async function ClientsPage() {
     .limit(1)
     .single()
 
-  if (!membership) redirect("/onboarding")
+  if (!membership) {
+    return (
+      <div className="space-y-6">
+        <ClientsHeader workspaceId="" />
+        <EmptyWorkspaceState
+          title="No Clients"
+          description="You need a workspace to manage clients. Create one to get started."
+        />
+      </div>
+    )
+  }
 
   // Fetch clients
   const { data: clients } = await supabase

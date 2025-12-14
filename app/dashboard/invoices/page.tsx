@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { InvoicesTable } from "@/components/invoices/invoices-table"
 import { InvoicesHeader } from "@/components/invoices/invoices-header"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function InvoicesPage() {
     const supabase = await createClient()
@@ -19,7 +20,17 @@ export default async function InvoicesPage() {
         .limit(1)
         .single()
 
-    if (!membership) redirect("/onboarding")
+    if (!membership) {
+        return (
+            <div className="space-y-6">
+                <InvoicesHeader workspaceId="" clients={[]} projects={[]} />
+                <EmptyWorkspaceState
+                    title="No Invoices"
+                    description="You need a workspace to manage invoices. Create one to get started."
+                />
+            </div>
+        )
+    }
 
     // Fetch invoices with client info
     const { data: invoices } = await supabase

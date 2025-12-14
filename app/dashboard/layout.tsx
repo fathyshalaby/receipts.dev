@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { WorkspaceProvider } from "@/components/providers/workspace-provider"
+import { VerificationBanner } from "@/components/dashboard/verification-banner"
 
 async function getWorkspaceData(userId: string) {
   const supabase = await createClient()
@@ -20,7 +21,7 @@ async function getWorkspaceData(userId: string) {
     .eq("user_id", userId)
 
   if (error || !memberships || memberships.length === 0) {
-    return null
+    return []
   }
 
   return memberships
@@ -38,10 +39,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const memberships = await getWorkspaceData(user.id)
 
-  if (!memberships || memberships.length === 0) {
-    redirect("/onboarding")
-  }
-
   // Get user profile
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
@@ -50,14 +47,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     role: m.role,
   }))
 
-  // Use first workspace as default active
-  const activeWorkspace = workspaces[0]
+  // Use first workspace as default active, or null if none
+  const activeWorkspace = workspaces.length > 0 ? workspaces[0] : null
 
   return (
     <WorkspaceProvider workspaces={workspaces} initialWorkspace={activeWorkspace} profile={profile}>
       <div className="flex h-screen bg-background">
         <DashboardSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
+          <VerificationBanner />
           <DashboardHeader />
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>

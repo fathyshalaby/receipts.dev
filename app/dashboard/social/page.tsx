@@ -4,6 +4,7 @@ import { SocialFeed } from "@/components/social/social-feed"
 import { CreatePostDialog } from "@/components/social/create-post-dialog"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { EmptyWorkspaceState } from "@/components/dashboard/empty-workspace-state"
 
 export default async function SocialPage() {
     const supabase = await createClient()
@@ -21,7 +22,22 @@ export default async function SocialPage() {
         .limit(1)
         .single()
 
-    if (!membership) redirect("/onboarding")
+    if (!membership) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Social Media</h1>
+                        <p className="text-muted-foreground">Schedule and manage your social media content</p>
+                    </div>
+                </div>
+                <EmptyWorkspaceState
+                    title="Social Media Unavailable"
+                    description="You need a workspace to manage social media. Create one to get started."
+                />
+            </div>
+        )
+    }
 
     // Fetch posts
     const { data: posts } = await supabase
