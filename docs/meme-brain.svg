@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" font-family="'Rubik', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f76fa6"/></linearGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f76fa6" stop-opacity=".55"/><stop offset="1" stop-color="#f76fa6" stop-opacity="0"/></radialGradient>
+    <!-- reusable cartoon brain -->
+    <g id="brain" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M-24,-2 C-30,-18 -10,-26 0,-16 C10,-26 30,-18 24,-2 C31,8 17,22 0,17 C-17,22 -31,8 -24,-2 Z"/>
+      <path d="M0,-16 V17" fill="none"/>
+      <path d="M-13,-8 q7,5 0,9 M13,-8 q-7,5 0,9 M-19,4 q5,3 9,0 M19,4 q-5,3 -9,0" fill="none"/>
+    </g>
+  </defs>
+
+  <rect width="760" height="520" rx="18" fill="#100a1c"/>
+  <rect x="8" y="8" width="744" height="504" rx="14" fill="none" stroke="#2c2347"/>
+  <text x="32" y="44" font-size="14" font-family="monospace" fill="#8e85a8">how to review an agent's PR — a journey</text>
+
+  <line x1="200" y1="68" x2="200" y2="500" stroke="#241b3c"/>
+
+  <g font-size="20" fill="#d7cdf2">
+    <!-- 1 -->
+    <use href="#brain" transform="translate(110,112) scale(1)" fill="#3a3357" stroke="#574d7a" stroke-width="2"/>
+    <text x="226" y="104">Read the entire 600-line diff,</text>
+    <text x="226" y="130" fill="#9b91b8">line by line, by hand</text>
+    <line x1="24" y1="158" x2="736" y2="158" stroke="#1d1633"/>
+
+    <!-- 2 -->
+    <use href="#brain" transform="translate(110,222) scale(1.18)" fill="#4a3f6e" stroke="#7a6aa6" stroke-width="1.8"/>
+    <text x="226" y="214">Skim the agent's text summary</text>
+    <text x="226" y="240" fill="#9b91b8">and just... trust it</text>
+    <line x1="24" y1="268" x2="736" y2="268" stroke="#1d1633"/>
+
+    <!-- 3 -->
+    <use href="#brain" transform="translate(110,334) scale(1.4)" fill="#6a4fa0" stroke="#b7a4fb" stroke-width="1.6"/>
+    <text x="226" y="326">Bolt on an AI reviewer to</text>
+    <text x="226" y="352" fill="#9b91b8">leave comments on the diff</text>
+    <line x1="24" y1="380" x2="736" y2="380" stroke="#1d1633"/>
+
+    <!-- 4 -->
+    <circle cx="110" cy="450" r="52" fill="url(#halo)"/>
+    <use href="#brain" transform="translate(110,450) scale(1.7)" fill="url(#g)" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.4"/>
+    <text x="226" y="440" font-weight="700" fill="#ece8f6">Make the agent record a receipt</text>
+    <text x="226" y="468" font-weight="700" fill="url(#g)">and watch the work in 90 seconds</text>
+  </g>
+</svg>

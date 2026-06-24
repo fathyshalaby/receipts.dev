@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" font-family="'Rubik', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f76fa6"/></linearGradient>
+    <radialGradient id="bgA" cx="18%" cy="0%" r="80%"><stop offset="0" stop-color="#2a1a4d"/><stop offset="1" stop-color="#100a1c"/></radialGradient>
+    <radialGradient id="bgB" cx="92%" cy="10%" r="70%"><stop offset="0" stop-color="#3a1733" stop-opacity=".8"/><stop offset="1" stop-color="#100a1c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1000" height="340" rx="20" fill="url(#bgA)"/>
+  <rect width="1000" height="340" rx="20" fill="url(#bgB)"/>
+  <rect x="1" y="1" width="998" height="338" rx="20" fill="none" stroke="#2c2347"/>
+
+  <!-- left: brand + tagline -->
+  <g transform="translate(64,92)">
+    <g transform="translate(0,-34)">
+      <path fill="url(#g)" d="M0 0h34v50l-6-4-6 4-6-4-5 4-5-4V0z" transform="scale(1.05)"/>
+      <g stroke="#150d24" stroke-width="2.4" stroke-linecap="round"><path d="M7 12h22M7 22h22M7 32h13"/></g>
+    </g>
+    <text x="56" y="6" font-size="46" font-weight="700" letter-spacing="-1" fill="#ece8f6">Receipts</text>
+    <text x="2" y="74" font-size="30" font-weight="700" letter-spacing="-0.5" fill="#ece8f6">Watch the work,</text>
+    <text x="2" y="110" font-size="30" font-weight="700" letter-spacing="-0.5" fill="url(#g)">not just the diff.</text>
+    <text x="2" y="156" font-size="16" fill="#9b91b8">Make your coding agents prove their work —</text>
+    <text x="2" y="180" font-size="16" fill="#9b91b8">recorded visual QA + reasoning, in one file.</text>
+  </g>
+
+  <!-- right: mini receipt -->
+  <g transform="translate(610,52)">
+    <rect width="330" height="236" rx="12" fill="#160e26" stroke="#2c2347"/>
+    <rect width="330" height="34" rx="12" fill="#1b1330"/><rect y="22" width="330" height="12" fill="#1b1330"/>
+    <circle cx="20" cy="17" r="5" fill="#ff5f57"/><circle cx="38" cy="17" r="5" fill="#febc2e"/><circle cx="56" cy="17" r="5" fill="#28c840"/>
+    <text x="312" y="21" text-anchor="end" font-size="10" font-family="monospace" fill="#6f6790">pr-128/index.html</text>
+
+    <text x="18" y="64" font-size="14" font-weight="600" fill="#ece8f6">Add dashboard empty-state</text>
+    <rect x="18" y="78" width="294" height="74" rx="8" fill="#15101f" stroke="#241b3c"/>
+    <circle cx="165" cy="115" r="17" fill="url(#g)"/>
+    <path d="M161 107l10 8-10 8z" fill="#150d24"/>
+    <text x="26" y="93" font-size="9" font-family="monospace" fill="#8e85a8">▶ session.webm</text>
+
+    <g font-size="11">
+      <rect x="18" y="164" width="294" height="22" rx="6" fill="#15101f" stroke="#241b3c"/>
+      <rect x="24" y="169" width="40" height="12" rx="6" fill="#143226"/><text x="44" y="178" text-anchor="middle" fill="#36d39a" font-family="monospace" font-size="9">PASS</text>
+      <text x="74" y="178" fill="#cbb6e6">empty state is visible</text>
+
+      <rect x="18" y="192" width="294" height="22" rx="6" fill="#15101f" stroke="#241b3c"/>
+      <rect x="24" y="197" width="40" height="12" rx="6" fill="#3a1c1c"/><text x="44" y="206" text-anchor="middle" fill="#ff6b6b" font-family="monospace" font-size="9">FAIL</text>
+      <text x="74" y="206" fill="#cbb6e6">dialog opens on click</text>
+    </g>
+  </g>
+</svg>

@@ -1,13 +1,37 @@
-# Receipts — watch the work
+<div align="center">
 
-> Incumbents make AI **review the PR**. Receipts makes the agent **prove its work** so a human can judge it.
-> **"Review the thinking" → "Watch the work."**
+<img src="docs/hero.svg" alt="Receipts — watch the work, not just the diff" width="100%" />
 
-A Claude skill (and CLI) that makes a coding agent leave **receipts**: a recorded
-visual-QA walkthrough + the reasoning behind every PR, packaged as **one
-self-contained artefact a human can judge in ~90 seconds.**
+<h1>🧾 Receipts</h1>
 
-A receipt is a folder you can open with no server, no account, no hosting:
+### Make your coding agents prove their work.
+
+**Incumbents make AI _review the PR_. Receipts makes the agent _prove its work_ so a human can judge it.**
+<br/>_"Review the thinking" → **"Watch the work."**_
+
+<p>
+<img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-7c3aed?style=flat-square" />
+<img alt="Made with Playwright" src="https://img.shields.io/badge/QA-Playwright-2ecc71?style=flat-square&logo=playwright&logoColor=white" />
+<img alt="TypeScript" src="https://img.shields.io/badge/built%20with-TypeScript-5ed6e8?style=flat-square&logo=typescript&logoColor=white" />
+<img alt="Claude Skill" src="https://img.shields.io/badge/Claude-Agent%20Skill-f76fa6?style=flat-square" />
+<img alt="No hosting" src="https://img.shields.io/badge/hosting-none%20required-9b91b8?style=flat-square" />
+<img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-a78bfa?style=flat-square" />
+</p>
+
+<sub><a href="#-quickstart-5-minutes">Quickstart</a> · <a href="#-how-it-works">How it works</a> · <a href="#-whats-in-a-receipt">What's in a receipt</a> · <a href="#-receipts-vs-the-incumbents">vs. code reviewers</a> · <a href="#-cli">CLI</a> · <a href="#-as-a-claude-skill">Claude skill</a></sub>
+
+</div>
+
+---
+
+A Claude skill **(and CLI)** that makes a coding agent leave **receipts**: a recorded visual-QA walkthrough **+** the reasoning behind every PR, packaged into **one self-contained file a human can judge in ~90 seconds.**
+
+<div align="center">
+<img src="docs/demo.svg" alt="receipts qa then build, running in a terminal" width="88%" />
+<br/><sub>👆 the whole flow: <code>receipts qa</code> drives Playwright per claim, <code>receipts build</code> packages the receipt</sub>
+</div>
+
+A receipt is a folder you can open with **no server, no account, no hosting**:
 
 ```
 .receipts/<id>/
@@ -18,53 +42,101 @@ A receipt is a folder you can open with no server, no account, no hosting:
 └── media/             ← session.webm, before/after screenshots, trace.zip
 ```
 
-The report leads with the **video** (watch the work), then **expected-vs-actual**
-per acceptance claim, then **how the agent thought** (plan, decisions, rejected
-alternatives, prompt log), then files changed.
+The report **leads with the video** (watch the work), then **expected-vs-actual** per acceptance claim, then **how the agent thought** (plan, decisions, rejected alternatives, prompt log), then the files changed.
 
-<!-- TODO: add docs/receipt.gif — a screen capture of a real receipt scrolling. -->
-<!-- ![A Receipts report](docs/receipt.gif) -->
+---
 
-## Why
+## 🤔 The problem
 
-Coding agents ship large PRs fast, often 5–20 in parallel. The bottleneck moved
-from writing code to reviewing it. A reviewer opens an agent's PR and gets a diff
-and maybe a text summary — no view of how the agent approached the task, whether
-it QA'd the result, or how the working software actually looks. So review is
-either slow or a rubber stamp.
+Coding agents ship large PRs fast — often **5–20 in parallel**. The bottleneck moved from _writing_ code to _reviewing_ it. A reviewer opens an agent's PR and gets a diff and maybe a text summary: no view of how the agent reasoned, whether it QA'd the result, or how the working software actually looks. So review is either **slow** (rebuild the context by hand) or a **rubber stamp.**
 
-Existing tools either **review the code** (CodeRabbit, Qodo, Greptile, Bugbot),
-**show reasoning with no visual proof**, or **lock replay to one agent's
-platform**. Receipts packages recorded visual QA **+** reasoning **+**
-expected-vs-actual as a tool-agnostic, self-hostable artefact attached to the PR.
+<div align="center">
+<img src="docs/meme-drake.svg" alt="Drake meme: reading a 600-line agent diff at 2am vs. opening one receipt and watching the work in 90s" width="62%" />
+</div>
 
-## Quickstart (5 minutes)
+Existing tools either **review the code** (CodeRabbit, Qodo, Greptile, Bugbot), **show reasoning with no visual proof**, or **lock replay to one agent's platform.** Nobody packages recorded visual QA **+** reasoning **+** expected-vs-actual as a **tool-agnostic, self-hostable** artefact attached to the PR.
+
+<div align="center">
+<img src="docs/meme-brain.svg" alt="Expanding-brain meme of PR-review strategies, ending in: make the agent record a receipt and watch the work in 90 seconds" width="66%" />
+</div>
+
+---
+
+## ⚡ Quickstart (5 minutes)
 
 ```bash
-git clone <this-repo> && cd <this-repo>
+git clone https://github.com/fathyshalaby/nuro && cd nuro
 npm install
 npx playwright install chromium
 
-# Run the bundled demo end-to-end (boots a tiny app, QAs 3 claims, builds report):
+# Run the bundled demo end-to-end (boots a tiny app, QAs 3 claims, builds the report):
 npx receipts qa --input examples/receipt-input.json --no-judge
 npx receipts build --in .receipts/demo-task-list
 npx receipts open  --in .receipts/demo-task-list
 ```
 
-That produces `.receipts/demo-task-list/index.html` — open it in any browser.
-Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get LLM-judged
-pass/fail verdicts per claim.
+That produces `.receipts/demo-task-list/index.html` — open it in any browser. Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get **LLM-judged pass/fail verdicts** per claim.
 
 ### On your own project
 
-1. Have your agent write a `receipt-input.json` (schema:
-   [`receipts/references/schemas.md`](receipts/references/schemas.md)) with
-   the task, plan, decisions, and **falsifiable acceptance claims**.
-2. `npx receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl`
-   in the input, or pass `--url`).
-3. `npx receipts build --in .receipts/<id>` then open `index.html`.
+1. Have your agent write a `receipt-input.json` ([schema](receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
+2. `npx receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
+3. `npx receipts build --in .receipts/<id>` and open `index.html`.
 
-## CLI
+---
+
+## 🎬 How it works
+
+```
+agent finishes on a branch
+        │
+        ▼
+[1] skill → agent writes receipt-input.json   (intent + reasoning, from session)
+        │
+        ▼
+[2] receipts qa     → boots app, Playwright per claim, records video + trace,
+        │              before/after screenshots, optional vision-LLM verdict
+        ▼
+[3] receipts build  → merges into manifest.json → renders self-contained index.html
+        │
+        ▼
+[4] local: open it      ·      CI: upload artefact + comment on the PR
+```
+
+Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent runs itself — or three CLI commands you run by hand.
+
+---
+
+## ✨ What's in a receipt
+
+| | Section | What it shows |
+|---|---|---|
+| 🎥 | **Watch the work** | The recorded Playwright session, embedded. Lead with the video — it's the hook. |
+| 🟢🔴 | **Expected vs actual** | Per claim: before/after screenshots side by side, a pass/fail verdict, the model's rationale. |
+| 🧠 | **How the agent thought** | Plan, key decisions, the alternatives it rejected and why, plus a collapsible prompt log. |
+| 📁 | **Files changed** | Grouped by area, with additions/deletions — so the diff has context. |
+| 📦 | **Self-contained** | Inline CSS/JS, media co-located, no CDN, no network. A file in your repo or a CI artefact. |
+| 🚦 | **CI-gateable** | `receipts qa` exits non-zero on any failing claim. Backend-only PR? It degrades to reasoning-only. |
+
+---
+
+## 🆚 Receipts vs. the incumbents
+
+|  | Code reviewers<br/><sub>CodeRabbit · Qodo · Greptile · Bugbot</sub> | Reasoning-only tools | Platform replay<br/><sub>Devin</sub> | **🧾 Receipts** |
+|---|:---:|:---:|:---:|:---:|
+| Recorded **visual QA** | ❌ | ❌ | ✅ | ✅ |
+| **Reasoning** record | ❌ | ✅ | partial | ✅ |
+| **Expected vs actual** | ❌ | ❌ | ❌ | ✅ |
+| **Tool-agnostic** | ✅ | ✅ | ❌ | ✅ |
+| **Self-hostable / no lock-in** | varies | varies | ❌ | ✅ |
+| One artefact on the PR | ❌ | ❌ | ❌ | ✅ |
+| Critiques your code | ✅ | ❌ | ❌ | **❌ (by design)** |
+
+> Receipts **documents and demonstrates** — it doesn't critique the code. That's deliberate (see [Non-goals](#-non-goals-v0)). Run it _alongside_ your code reviewer.
+
+---
+
+## 🛠️ CLI
 
 ```
 receipts qa     --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
@@ -72,80 +144,59 @@ receipts build  --in .receipts/<id>
 receipts open   --in .receipts/<id>
 ```
 
-- `qa` boots the app (if `startCommand` is set), drives Playwright per claim,
-  records a video + trace, captures before/after screenshots, and (with an API
-  key) asks a vision model for a verdict per claim.
-- **Exit code:** `qa` exits non-zero if any claim **fails or is inconclusive**, so
-  CI can gate. Reasoning-only and visual-only runs exit `0`.
+- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures before/after screenshots, and — with an API key — asks a vision model for a verdict per claim.
+- **Exit code:** `qa` exits **non-zero** if any claim **fails or is inconclusive**, so CI can gate. Reasoning-only and visual-only runs exit `0`.
 
 ### Environment
 
 | Var | Purpose |
 |---|---|
-| `RECEIPTS_API_KEY` | Anthropic API key for the vision judge. Omit → visual-only. |
+| `RECEIPTS_API_KEY` | Anthropic API key for the vision judge. Omit → **visual-only** mode. |
 | `RECEIPTS_MODEL` | Judge model id (default `claude-sonnet-4-6`). |
 
-No telemetry. No network calls except the optional LLM judge.
+No telemetry. **No network calls except the optional LLM judge.**
 
-## Landing page
+---
 
-A static marketing site lives in [`site/`](site/) — a single self-contained
-`index.html` + `styles.css` (no build step). Open `site/index.html` in a browser,
-or deploy it to GitHub Pages with the included
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml) (Settings → Pages →
-Source: GitHub Actions).
+## 🤖 As a Claude skill
 
-## As a Claude skill
+The [`receipts/`](receipts/) folder is an **Anthropic Agent Skill**. Installed in Claude Code, it triggers on prompts like _"QA this and leave receipts on the PR"_ and runs the full flow itself: write `receipt-input.json` from session → `receipts qa` → `receipts build` → surface the path. See [`receipts/SKILL.md`](receipts/SKILL.md).
 
-The [`receipts/`](receipts/) folder is an Anthropic Agent Skill. Installed
-in Claude Code, it triggers on prompts like *"QA this and leave receipts on the
-PR"* and runs the full flow: write `receipt-input.json` from session → `receipts
-qa` → `receipts build` → surface the path. See
-[`receipts/SKILL.md`](receipts/SKILL.md).
+## 🚀 GitHub Action
 
-## GitHub Action
+[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is a template: on a PR it installs Playwright, runs `qa` + `build`, uploads the receipt folder as an artefact, and posts/updates a PR comment linking to it. Copy it and adapt the boot step for your stack.
 
-[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is a template:
-on a PR it installs Playwright, runs `qa` + `build`, uploads the receipt folder as
-an artefact, and posts/updates a PR comment linking to it. Copy and adapt the boot
-step for your stack.
+## 🌐 Landing page
 
-## Graceful degradation
+A static marketing site lives in [`site/`](site/) — one self-contained `index.html` + `styles.css`, no build step. Open it locally, or deploy to GitHub Pages with [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
 
-- **Backend/API-only PR** (no acceptance criteria or no `targetUrl`): emits a
-  **reasoning-only** receipt, exits 0, and the report says no visual QA ran.
-- **No API key:** **visual-only** receipt (video + screenshots, verdicts
-  `not_tested`). Still valid and useful.
+---
 
-## Non-goals (v0)
+## 🪂 Graceful degradation
 
-- **Not an AI code reviewer.** No review comments, no severity ratings on the
-  diff. We document and demonstrate; we don't critique the code.
+- **Backend / API-only PR** (no acceptance criteria or no `targetUrl`): emits a **reasoning-only** receipt, exits 0, and the report header says no visual QA ran. Never hard-fails because there was nothing visual to test.
+- **No API key:** **visual-only** receipt (video + screenshots, verdicts `not_tested`). Still valid and useful.
+
+## 🚫 Non-goals (v0)
+
+- **Not an AI code reviewer.** No review comments, no severity ratings on the diff. We document and demonstrate; we don't critique the code.
 - **Not observability/metrics.** No token/cost/latency dashboards.
-- **Not a test-framework replacement.** We orchestrate Playwright; we don't
-  reinvent assertions or visual-diff baselines.
-- **Not hosted.** No accounts, no buckets, no DB in v0. (Hosted multiplayer
-  review is Phase 2 — `manifest.json` stays the single source of truth so the
-  same artefact powers both.)
+- **Not a test-framework replacement.** We orchestrate Playwright; we don't reinvent assertions or visual-diff baselines.
+- **Not hosted.** No accounts, no buckets, no DB in v0. _(Hosted multiplayer review is Phase 2 — `manifest.json` stays the single source of truth so the same artefact powers both.)_
 - **UI/frontend work is the target.** API-only PRs degrade gracefully.
 
-## Design decisions
+## 🧭 Design decisions
 
-- **Wrap Playwright directly** (don't depend on `yutori-ai/frontend-visualqa`),
-  borrowing its claim/verdict discipline — keeps the dependency surface small and
-  the artefact fully ours. Claims are natural language, judged by a vision LLM
-  from screenshots (deterministic pixel asserts are out — too brittle).
-- **Visual-only is a first-class mode**, so anyone without an API key still gets a
-  useful receipt.
-- **Receipts are gitignored by default** (CI artefact is the canonical delivery);
-  `git add -f .receipts/<id>` to put one in the PR diff.
+- **Wrap Playwright directly** (don't depend on `yutori-ai/frontend-visualqa`), borrowing its claim/verdict discipline — small dependency surface, the artefact is fully ours. Claims are natural language, judged by a vision LLM from screenshots (deterministic pixel asserts are out — too brittle).
+- **Visual-only is a first-class mode**, so anyone without an API key still gets a useful receipt.
+- **Receipts are gitignored by default** (CI artefact is the canonical delivery); `git add -f .receipts/<id>` to put one in the PR diff.
 
-## Tech
+## 🧱 Tech
 
-TypeScript/Node, Playwright (`recordVideo` + `context.tracing`, pinned Chromium),
-self-contained HTML (inline CSS/JS, no CDN, no `localStorage`). Run via `tsx` — no
-build step. MIT licensed.
+TypeScript / Node, Playwright (`recordVideo` + `context.tracing`, pinned Chromium), self-contained HTML (inline CSS/JS, no CDN, no `localStorage`). Runs via `tsx` — **no build step.**
 
-## License
+## 📄 License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Go wild.
+
+<div align="center"><br/><sub>Generated by Receipts — <b>watch the work.</b></sub></div>

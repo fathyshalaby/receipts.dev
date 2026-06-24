@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace">
+  <defs>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f76fa6"/>
+    </linearGradient>
+    <style>
+      /* Visible by default so renderers that ignore CSS animation still show the
+         full terminal; when animation runs you get the staggered reveal. */
+      .line { opacity: 1; animation: appear 9s linear infinite both; }
+      @keyframes appear {
+        0% { opacity: 0; }
+        5% { opacity: 1; }
+        90% { opacity: 1; }
+        97% { opacity: 0; }
+        100% { opacity: 0; }
+      }
+      .l1 { animation-delay: 0.0s } .l2 { animation-delay: 0.5s } .l3 { animation-delay: 1.0s }
+      .l4 { animation-delay: 1.6s } .l5 { animation-delay: 2.1s } .l6 { animation-delay: 2.6s }
+      .l7 { animation-delay: 3.2s } .l8 { animation-delay: 3.9s } .l9 { animation-delay: 4.4s }
+      .cursor { animation: blink 1s steps(1) infinite; }
+      @keyframes blink { 50% { opacity: 0 } }
+      .p { fill: #f76fa6 } .cmd { fill: #b7a4fb } .flag { fill: #5ed6e8 }
+      .ok { fill: #36d39a } .fail { fill: #ff6b6b } .muted { fill: #8e85a8 } .txt { fill: #d7cdf2 }
+    </style>
+  </defs>
+
+  <!-- window -->
+  <rect x="1" y="1" width="878" height="418" rx="14" fill="#0b0614" stroke="#2c2347"/>
+  <rect x="1" y="1" width="878" height="44" rx="14" fill="#140d24"/>
+  <rect x="1" y="30" width="878" height="15" fill="#140d24"/>
+  <circle cx="28" cy="23" r="6" fill="#ff5f57"/><circle cx="50" cy="23" r="6" fill="#febc2e"/><circle cx="72" cy="23" r="6" fill="#28c840"/>
+  <text x="440" y="28" text-anchor="middle" font-size="13" fill="#6f6790">receipts — watch the work</text>
+
+  <g font-size="15">
+    <text class="line l1" x="26" y="86"><tspan class="p">$</tspan> <tspan class="cmd">npx receipts</tspan><tspan class="txt"> qa </tspan><tspan class="flag">--input</tspan><tspan class="txt"> receipt-input.json</tspan></text>
+    <text class="line l2 muted" x="26" y="120">[receipts] booting app: npm run dev</text>
+    <text class="line l3" x="26" y="154"><tspan class="ok">[receipts] ✓</tspan><tspan class="muted"> app is up at http://localhost:3000</tspan></text>
+    <text class="line l4" x="26" y="188"><tspan class="muted">[receipts] ▶ ac1: empty state is visible</tspan><tspan class="ok">   ↳ pass</tspan></text>
+    <text class="line l5" x="26" y="222"><tspan class="muted">[receipts] ▶ ac2: create button is visible</tspan><tspan class="ok">   ↳ pass</tspan></text>
+    <text class="line l6" x="26" y="256"><tspan class="muted">[receipts] ▶ ac3: dialog opens on click</tspan><tspan class="fail">   ↳ fail</tspan></text>
+    <text class="line l7" x="26" y="290"><tspan class="ok">[receipts] ✓</tspan><tspan class="txt"> qa complete  </tspan><tspan class="muted">(pass:2 fail:1)</tspan></text>
+    <text class="line l8" x="26" y="324"><tspan class="p">$</tspan> <tspan class="cmd">npx receipts</tspan><tspan class="txt"> build </tspan><tspan class="flag">--in</tspan><tspan class="txt"> .receipts/pr-128</tspan></text>
+    <text class="line l9" x="26" y="358"><tspan class="ok">[receipts] ✓</tspan><tspan class="txt"> built receipt → index.html  </tspan><tspan class="muted">(overall: fail)</tspan></text>
+  </g>
+  <rect class="cursor" x="26" y="380" width="10" height="17" fill="url(#glow)"/>
+</svg>

@@ -24,7 +24,7 @@
     "receipts": "tsx receipts/scripts/cli.ts",
     "typecheck": "tsc --noEmit",
     "demo:serve": "node examples/demo-app/server.mjs",
-    "demo": "tsx receipts/scripts/cli.ts qa --input examples/receipt-input.json && tsx receipts/scripts/cli.ts build --in .receipts/pr-demo && tsx receipts/scripts/cli.ts open --in .receipts/pr-demo"
+    "demo": "tsx receipts/scripts/cli.ts qa --input examples/receipt-input.json --no-judge && tsx receipts/scripts/cli.ts build --in .receipts/demo-task-list && tsx receipts/scripts/cli.ts open --in .receipts/demo-task-list"
   },
   "dependencies": {
     "playwright": "1.49.1",
