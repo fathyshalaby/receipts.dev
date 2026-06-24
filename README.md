@@ -58,7 +58,7 @@ pass/fail verdicts per claim.
 ### On your own project
 
 1. Have your agent write a `receipt-input.json` (schema:
-   [`pr-receipts/references/schemas.md`](pr-receipts/references/schemas.md)) with
+   [`receipts/references/schemas.md`](receipts/references/schemas.md)) with
    the task, plan, decisions, and **falsifiable acceptance claims**.
 2. `npx receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl`
    in the input, or pass `--url`).
@@ -97,11 +97,11 @@ Source: GitHub Actions).
 
 ## As a Claude skill
 
-The [`pr-receipts/`](pr-receipts/) folder is an Anthropic Agent Skill. Installed
+The [`receipts/`](receipts/) folder is an Anthropic Agent Skill. Installed
 in Claude Code, it triggers on prompts like *"QA this and leave receipts on the
 PR"* and runs the full flow: write `receipt-input.json` from session → `receipts
 qa` → `receipts build` → surface the path. See
-[`pr-receipts/SKILL.md`](pr-receipts/SKILL.md).
+[`receipts/SKILL.md`](receipts/SKILL.md).
 
 ## GitHub Action
 

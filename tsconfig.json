@@ -12,5 +12,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["pr-receipts/scripts/**/*.ts"]
+  "include": ["receipts/scripts/**/*.ts"]
 }

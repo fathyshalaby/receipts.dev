@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Thin launcher: runs the TypeScript CLI through tsx so there is no build step.
-// Keeps a single source of truth (pr-receipts/scripts/*.ts) for both the npm
+// Keeps a single source of truth (receipts/scripts/*.ts) for both the npm
 // package bin and the Anthropic Agent Skill.
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const cli = join(here, "..", "pr-receipts", "scripts", "cli.ts");
+const cli = join(here, "..", "receipts", "scripts", "cli.ts");
 const require = createRequire(import.meta.url);
 
 let tsxCli;

@@ -45,9 +45,9 @@ export function generatorVersion(): string {
     const pkg = JSON.parse(
       readFileSync(join(here, "..", "..", "package.json"), "utf8")
     );
-    return `pr-receipts@${pkg.version}`;
+    return `receipts@${pkg.version}`;
   } catch {
-    return "pr-receipts@0.0.0";
+    return "receipts@0.0.0";
   }
 }
 

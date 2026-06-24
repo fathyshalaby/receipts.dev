@@ -120,7 +120,7 @@ Superset combining `receipt-input.json` + `qa-results.json` + metadata.
 ```jsonc
 {
   "schemaVersion": "1",
-  "generatorVersion": "pr-receipts@x.y.z",
+  "generatorVersion": "receipts@x.y.z",
   "generatedAt": "ISO8601",
   "overallVerdict": "pass | fail | reasoning-only | visual-only",
   "repo": "string | null — https URL of origin remote",

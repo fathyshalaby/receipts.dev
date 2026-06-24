@@ -1,5 +1,5 @@
 ---
-name: pr-receipts
+name: receipts
 description: Generate a visual-QA walkthrough and reasoning record ("receipt") for a coding agent's work, attached to the PR. Use whenever the user asks to QA a change, document a PR, "leave receipts", show how a change looks, prove an agent's work before review, or produce expected-vs-actual visual proof of a UI change — even if they don't say the word "receipt".
 ---
 
