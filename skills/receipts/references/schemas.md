@@ -136,5 +136,44 @@ Superset combining `receipt-input.json` + `qa-results.json` + metadata.
 - `visual-only` — QA ran but all verdicts were `not_tested` (no judge / `--no-judge`).
 - `reasoning-only` — no visual QA ran (no acceptance criteria or no `targetUrl`).
 
-`manifest.json` is the single source of truth for both the local report and any
-future hosted layer — keep the report generator decoupled from storage.
+`manifest.json` is the single source of truth for both the local report and the
+hosted layer — keep the report generator decoupled from storage.
+
+---
+
+## 8.4 `publish.json` — written by `receipts publish`
+
+Optional. Only present after a receipt is pushed to Supabase. The CI workflow
+reads `reportUrl` / `videoUrl` from here to build the PR comment.
+
+```jsonc
+{
+  "schemaVersion": "1",
+  "mode": "byo | hosted",
+  "id": "string — receipts.id (BYO) or the id minted by the ingest function",
+  "reportUrl": "string — public URL to index.html",
+  "videoUrl": "string | null — public URL to the recorded session",
+  "publishedAt": "ISO8601"
+}
+```
+
+### Hosted persistence (Supabase)
+
+`supabase/migrations/0001_receipts.sql` defines the schema both modes write to:
+
+- **`receipts` table** — one row per published receipt: metadata (`repo`,
+  `branch`, `pr_number`, `task`, `overall_verdict`, `summary`), the full
+  `manifest` (jsonb), storage pointers (`storage_prefix`, `report_path`,
+  `video_path`), public URLs (`report_url`, `video_url`), and `visibility`
+  (`unlisted` | `public` | `private`).
+- **`api_keys` table** — hosted-mode upload tokens, stored only as
+  `sha256(token)` in `token_hash`, scoped by `owner_id`.
+- **`receipts` storage bucket** — files under `<owner>/<id>/…`
+  (`index.html`, `manifest.json`, `media/`). Public-read by default but
+  unguessable (uuid prefix); flip to private + signed URLs for hard access
+  control.
+
+**Mode selection** (`receipts publish`): BYO (`RECEIPTS_SUPABASE_URL` +
+`RECEIPTS_SUPABASE_KEY`, service role, RLS bypassed) takes precedence; otherwise
+hosted (`RECEIPTS_TOKEN` → the `ingest` edge function, which holds the service
+key). See `docs/hosting.md` for the full setup and the signed-upload protocol.

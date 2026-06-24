@@ -98,7 +98,27 @@ receipts build --in .receipts/<id>
 Merges everything into `manifest.json` and renders a single self-contained
 `index.html` (inline CSS/JS, media by relative path, no network).
 
-### 4. Surface it
+### 4. (Optional) Publish to Supabase
+
+By default a receipt is a local, self-contained folder — no hosting needed. To
+get a **shareable link for the PR** (the hosted report + a direct video link),
+publish it to Supabase. Two modes, picked from the environment:
+
+```bash
+receipts publish --in .receipts/<id>
+```
+
+- **Bring-your-own** — set `RECEIPTS_SUPABASE_URL` + `RECEIPTS_SUPABASE_KEY`
+  (service role) to publish to the user's own project.
+- **Hosted ("ours")** — set `RECEIPTS_TOKEN` (an upload token) and the CLI POSTs
+  to the hosted ingest endpoint; the service key never leaves the server.
+
+It uploads the report + media, records a row, and writes `publish.json` with the
+`reportUrl` and `videoUrl`. Only publish when the user asked for a hosted/shared
+link or asked to "send it" — local receipts are the zero-config default. If no
+Supabase target is configured, skip this step (don't error).
+
+### 5. Surface it
 
 Tell the user the path, and offer to open it:
 
@@ -106,9 +126,10 @@ Tell the user the path, and offer to open it:
 receipts open --in .receipts/<id>
 ```
 
-Then report the overall verdict and the receipt location. In CI, the GitHub
-Action (`.github/workflows/receipts.yml`) uploads the folder as an artefact and
-comments on the PR.
+Then report the overall verdict and the receipt location (and the `reportUrl` /
+`videoUrl` if it was published). In CI, the GitHub Action
+(`.github/workflows/receipts.yml`) publishes to Supabase when configured,
+uploads the folder as an artefact, and comments the links on the PR.
 
 ## Graceful degradation
 

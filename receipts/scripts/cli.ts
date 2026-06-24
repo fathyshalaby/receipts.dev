@@ -2,6 +2,7 @@
 import { runQa } from "./qa";
 import { runBuild } from "./build";
 import { runOpen } from "./open";
+import { runPublish } from "./publish";
 import { generatorVersion } from "./util";
 
 const HELP = `Receipts — watch the work.
@@ -9,14 +10,23 @@ Make a coding agent leave receipts: a recorded visual-QA walkthrough + the
 reasoning behind a PR, packaged as one self-contained artefact.
 
 Usage:
-  receipts qa     --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
-  receipts build  --in .receipts/<id>
-  receipts open   --in .receipts/<id>
+  receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+  receipts build   --in .receipts/<id>
+  receipts open    --in .receipts/<id>
+  receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
   receipts --version | --help
 
 Env:
-  RECEIPTS_API_KEY   Anthropic API key for the vision judge (omit for visual-only).
-  RECEIPTS_MODEL     Judge model id (default: claude-sonnet-4-6).
+  RECEIPTS_API_KEY       Anthropic API key for the vision judge (omit for visual-only).
+  RECEIPTS_MODEL         Judge model id (default: claude-sonnet-4-6).
+
+  # publish — bring-your-own Supabase (service role; bypasses RLS):
+  RECEIPTS_SUPABASE_URL  Your Supabase project URL.
+  RECEIPTS_SUPABASE_KEY  Service-role key for that project.
+
+  # publish — hosted ("ours"):
+  RECEIPTS_TOKEN         Upload token issued by the hosted service.
+  RECEIPTS_INGEST_URL    Ingest endpoint (if not built into the CLI).
 `;
 
 async function main(): Promise<number> {
@@ -38,6 +48,8 @@ async function main(): Promise<number> {
       return runBuild(rest);
     case "open":
       return runOpen(rest);
+    case "publish":
+      return runPublish(rest);
     default:
       console.error(`[receipts] unknown command: ${cmd}\n`);
       console.log(HELP);

@@ -14,7 +14,7 @@
 <img alt="Made with Playwright" src="https://img.shields.io/badge/QA-Playwright-2ecc71?style=flat-square&logo=playwright&logoColor=white" />
 <img alt="TypeScript" src="https://img.shields.io/badge/built%20with-TypeScript-5ed6e8?style=flat-square&logo=typescript&logoColor=white" />
 <img alt="Claude Skill" src="https://img.shields.io/badge/Claude-Agent%20Skill-f76fa6?style=flat-square" />
-<img alt="No hosting" src="https://img.shields.io/badge/hosting-none%20required-9b91b8?style=flat-square" />
+<img alt="Hosting optional" src="https://img.shields.io/badge/hosting-optional-9b91b8?style=flat-square" />
 <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-a78bfa?style=flat-square" />
 </p>
 
@@ -79,9 +79,10 @@ That produces `.receipts/demo-task-list/index.html` — open it in any browser. 
 
 ### On your own project
 
-1. Have your agent write a `receipt-input.json` ([schema](receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
+1. Have your agent write a `receipt-input.json` ([schema](skills/receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
 2. `npx receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
 3. `npx receipts build --in .receipts/<id>` and open `index.html`.
+4. _(optional)_ `npx receipts publish --in .receipts/<id>` to push it to Supabase and get a shareable link for the PR — see [Publish to Supabase](#-publish-to-supabase-optional).
 
 ---
 
@@ -139,13 +140,15 @@ Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent r
 ## 🛠️ CLI
 
 ```
-receipts qa     --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
-receipts build  --in .receipts/<id>
-receipts open   --in .receipts/<id>
+receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+receipts build   --in .receipts/<id>
+receipts open    --in .receipts/<id>
+receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
 ```
 
 - **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures before/after screenshots, and — with an API key — asks a vision model for a verdict per claim.
 - **Exit code:** `qa` exits **non-zero** if any claim **fails or is inconclusive**, so CI can gate. Reasoning-only and visual-only runs exit `0`.
+- **`publish`** uploads the report + media to Supabase and writes `publish.json` with the hosted `reportUrl` + `videoUrl`. Optional — local receipts need nothing.
 
 ### Environment
 
@@ -153,18 +156,36 @@ receipts open   --in .receipts/<id>
 |---|---|
 | `RECEIPTS_API_KEY` | Anthropic API key for the vision judge. Omit → **visual-only** mode. |
 | `RECEIPTS_MODEL` | Judge model id (default `claude-sonnet-4-6`). |
+| `RECEIPTS_SUPABASE_URL` / `RECEIPTS_SUPABASE_KEY` | **Publish (BYO):** your own Supabase project URL + service-role key. |
+| `RECEIPTS_TOKEN` / `RECEIPTS_INGEST_URL` | **Publish (hosted):** upload token + ingest endpoint for the shared instance. |
 
-No telemetry. **No network calls except the optional LLM judge.**
+No telemetry. **The only network calls are the optional LLM judge and `receipts publish` (to the Supabase you point it at).**
 
 ---
 
-## 🤖 As a Claude skill
+## 🤖 As a Claude plugin
 
-The [`receipts/`](receipts/) folder is an **Anthropic Agent Skill**. Installed in Claude Code, it triggers on prompts like _"QA this and leave receipts on the PR"_ and runs the full flow itself: write `receipt-input.json` from session → `receipts qa` → `receipts build` → surface the path. See [`receipts/SKILL.md`](receipts/SKILL.md).
+Receipts ships as a **Claude Code plugin** ([`.claude-plugin/`](.claude-plugin/)) that bundles the `receipts` skill ([`skills/receipts/SKILL.md`](skills/receipts/SKILL.md)). Install it from this repo's marketplace:
+
+```
+/plugin marketplace add fathyshalaby/nuro
+/plugin install receipts
+```
+
+Once installed, it triggers on prompts like _"QA this and leave receipts on the PR"_ and runs the full flow itself: write `receipt-input.json` from session → `receipts qa` → `receipts build` → _(optional)_ `receipts publish` → surface the link. The skill is also usable standalone (drop [`skills/receipts/`](skills/receipts/) into `.claude/skills/`).
+
+## 🗄️ Publish to Supabase (optional)
+
+A receipt is a **local, self-contained folder by default — no hosting needed.** `receipts publish` is the optional step that puts it behind a URL so a PR comment can link to **the hosted report** _and_ **the raw video**. Two modes, picked from the environment:
+
+- **Bring your own** — set `RECEIPTS_SUPABASE_URL` + `RECEIPTS_SUPABASE_KEY` (service role) and publish straight to your own project.
+- **Hosted ("ours")** — set `RECEIPTS_TOKEN`; the CLI POSTs an ingest endpoint that holds the service key, so end users never do.
+
+Both write to the same schema (`manifest.json` stays the source of truth). Apply [`supabase/migrations/0001_receipts.sql`](supabase/migrations/0001_receipts.sql) (tables, RLS, storage bucket); the hosted path also deploys [`supabase/functions/ingest`](supabase/functions/ingest/). **Full setup, the ingest protocol, and access-control notes are in [`docs/hosting.md`](docs/hosting.md).**
 
 ## 🚀 GitHub Action
 
-[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is a template: on a PR it installs Playwright, runs `qa` + `build`, uploads the receipt folder as an artefact, and posts/updates a PR comment linking to it. Copy it and adapt the boot step for your stack.
+[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is a template: on a PR it installs Playwright, runs `qa` + `build`, **publishes to Supabase when configured**, uploads the receipt folder as an artefact, and posts/updates a PR comment linking to the **hosted report + raw video** (falling back to the artefact when no Supabase target is set). Copy it and adapt the boot step for your stack.
 
 ## 🌐 Landing page
 
@@ -182,7 +203,7 @@ A static marketing site lives in [`site/`](site/) — one self-contained `index.
 - **Not an AI code reviewer.** No review comments, no severity ratings on the diff. We document and demonstrate; we don't critique the code.
 - **Not observability/metrics.** No token/cost/latency dashboards.
 - **Not a test-framework replacement.** We orchestrate Playwright; we don't reinvent assertions or visual-diff baselines.
-- **Not hosted.** No accounts, no buckets, no DB in v0. _(Hosted multiplayer review is Phase 2 — `manifest.json` stays the single source of truth so the same artefact powers both.)_
+- **Hosting is optional, not required.** The local self-contained folder is the default and always works offline. `receipts publish` (Supabase, BYO or hosted) is an opt-in add-on for a shareable PR link — `manifest.json` stays the single source of truth so the same artefact powers both. _(Hosted multiplayer review is still Phase 2.)_
 - **UI/frontend work is the target.** API-only PRs degrade gracefully.
 
 ## 🧭 Design decisions

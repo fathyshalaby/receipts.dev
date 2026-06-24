@@ -18,6 +18,9 @@
   "files": [
     "bin",
     "receipts",
+    "skills",
+    "supabase",
+    ".claude-plugin",
     "examples"
   ],
   "scripts": {
