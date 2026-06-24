@@ -87,6 +87,14 @@ receipts open   --in .receipts/<id>
 
 No telemetry. No network calls except the optional LLM judge.
 
+## Landing page
+
+A static marketing site lives in [`site/`](site/) — a single self-contained
+`index.html` + `styles.css` (no build step). Open `site/index.html` in a browser,
+or deploy it to GitHub Pages with the included
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) (Settings → Pages →
+Source: GitHub Actions).
+
 ## As a Claude skill
 
 The [`pr-receipts/`](pr-receipts/) folder is an Anthropic Agent Skill. Installed
