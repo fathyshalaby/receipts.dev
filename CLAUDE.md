@@ -73,7 +73,7 @@ npm run demo:serve       # boot just the example app
 CLI surface (also `npx receipts <cmd>` once installed):
 
 ```
-receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--no-adversarial] [--out DIR]
 receipts build   --in .receipts/<id>
 receipts open    --in .receipts/<id>
 receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
@@ -126,6 +126,15 @@ Output folder:
   snapshot of interactive elements, validated against an allow-list (`MAX_STEPS`,
   `parseNavSteps` drops disallowed actions). Gated on `RECEIPTS_API_KEY`.
 
+### Judging (`judge.ts`)
+- The judge sees the **chronological frame sequence** per claim (before → per-step
+  → after, captured in `qa.ts` via the `onStep` hooks), not just before/after.
+- **Adversarial pass:** any `pass` is re-checked by a second judge prompted to
+  *refute* it; a refutation downgrades `pass → inconclusive` (`reconcileVerdict`,
+  pure + unit-tested). Bound to passing claims only (cost). `--no-adversarial`
+  disables it. Don't remove this without flagging — it's the counter to the
+  "agent grades its own homework" critique.
+
 ### Verdicts & exit codes (CI gate)
 - `qa` exits **non-zero** if any claim **fails or is inconclusive**.
 - **Reasoning-only** (no acceptance criteria / no `targetUrl`) and
@@ -177,6 +186,7 @@ Output folder:
 |---|---|
 | `RECEIPTS_API_KEY` | Anthropic key for the vision judge + LLM nav. Omit → visual-only. |
 | `RECEIPTS_MODEL` | Judge/nav model id (default `claude-sonnet-4-6`). |
+| `RECEIPTS_CHROMIUM_PATH` | System Chrome/Chromium binary; fallback when the pinned Playwright build isn't installed. |
 | `RECEIPTS_SUPABASE_URL` / `RECEIPTS_SUPABASE_KEY` | Publish (BYO): project URL + service-role key. |
 | `RECEIPTS_TOKEN` / `RECEIPTS_INGEST_URL` | Publish (hosted): upload token + ingest endpoint. |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Web app only (anon, RLS-protected). |
@@ -198,8 +208,9 @@ Full setup + ingest protocol: `docs/hosting.md`.
 
 `__tests__/unit.test.ts` (vitest, node env) covers **pure, exported functions**
 only — `parseNavSteps`, `buildNavPrompt`, `selectMode`, `resolveCredentials`,
-`receiptId`, `sha256Hex`. No browser/network in unit tests. When you add a pure
-helper to the pipeline, export it and add a case here. Run `npm test`.
+`receiptId`, `sha256Hex`, `reconcileVerdict`, `sampleFrames`. No browser/network
+in unit tests. When you add a pure helper to the pipeline, export it and add a
+case here. Run `npm test`.
 
 ## Working agreements
 

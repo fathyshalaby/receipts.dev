@@ -104,13 +104,35 @@ export function renderReport(m: Manifest): string {
         r.nav?.mode === "llm"
           ? `<p class="navnote" title="${esc(r.nav.note ?? "")}">🧭 reached via AI navigation</p>`
           : "";
+      const mid = (r.frames ?? []).slice(1, -1);
+      const framesStrip = mid.length
+        ? `<div class="frames"><span class="frames__label">during</span>${mid
+            .map(
+              (f) =>
+                `<a href="${esc(f)}" target="_blank"><img loading="lazy" src="${esc(
+                  f
+                )}" alt="interaction frame"></a>`
+            )
+            .join("")}</div>`
+        : "";
+      const adversarialNote = r.adversarial
+        ? r.adversarial.refuted
+          ? `<p class="adv adv--refuted" title="${esc(
+              r.adversarial.rationale
+            )}">⚖ An adversarial second look refuted this pass — downgraded.</p>`
+          : `<p class="adv adv--ok" title="${esc(
+              r.adversarial.rationale
+            )}">⚖ Survived an adversarial second look.</p>`
+        : "";
       return `
       <div class="claim">
         <div class="claim__hd">${badge(r.verdict)}<span class="claim__id">${esc(
           r.acId
         )}</span><span class="claim__text">${esc(r.claim)}</span></div>
         ${navNote}
+        ${adversarialNote}
         ${shots}
+        ${framesStrip}
         ${rationale}
       </div>`;
     })

@@ -67,6 +67,14 @@ export interface QaResult {
     before: string | null;
     after: string;
   };
+  /** Chronological frames the judge saw (before → per-step → after), relative paths. */
+  frames?: string[];
+  /**
+   * Adversarial second look at a claimed pass. Present only when the primary
+   * verdict was `pass` and the adversarial pass ran. `refuted: true` downgrades
+   * the verdict to `inconclusive` (see reconcileVerdict).
+   */
+  adversarial?: { refuted: boolean; rationale: string } | null;
   /** How the "after" state was reached. `llm` = navigated from navigationHint. */
   nav?: { mode: "deterministic" | "llm" | "none"; note?: string };
 }

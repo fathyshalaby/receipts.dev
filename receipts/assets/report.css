@@ -106,3 +106,13 @@ a:hover { text-decoration: underline; }
   margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 
 .navnote { margin: 4px 0 8px; font-size: 13px; color: #5ed6e8; font-weight: 600; }
+
+/* Adversarial check note */
+.adv { margin: 4px 0 8px; font-size: 13px; font-weight: 600; }
+.adv--refuted { color: var(--warn); }
+.adv--ok { color: var(--pass); }
+
+/* Intermediate interaction frames (the trajectory the judge saw) */
+.frames { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.frames__label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.frames img { height: 64px; width: auto; border: 1px solid var(--border); border-radius: 6px; display: block; }

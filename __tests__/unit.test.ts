@@ -4,6 +4,7 @@ import { selectMode } from "../receipts/scripts/publish";
 import { resolveCredentials } from "../receipts/scripts/credentials";
 import { receiptId } from "../receipts/scripts/util";
 import { sha256Hex } from "../receipts/scripts/tokens";
+import { reconcileVerdict, sampleFrames } from "../receipts/scripts/judge";
 
 describe("parseNavSteps", () => {
   it("keeps valid steps and coerces shape", () => {
@@ -99,5 +100,32 @@ describe("sha256Hex", () => {
     expect(sha256Hex("abc")).toBe(
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );
+  });
+});
+
+describe("reconcileVerdict", () => {
+  it("downgrades a refuted pass to inconclusive", () => {
+    expect(reconcileVerdict("pass", true)).toBe("inconclusive");
+  });
+  it("leaves an unrefuted pass alone", () => {
+    expect(reconcileVerdict("pass", false)).toBe("pass");
+  });
+  it("never invents a failure from a refuted non-pass", () => {
+    expect(reconcileVerdict("fail", true)).toBe("fail");
+    expect(reconcileVerdict("inconclusive", true)).toBe("inconclusive");
+    expect(reconcileVerdict("not_tested", true)).toBe("not_tested");
+  });
+});
+
+describe("sampleFrames", () => {
+  it("returns frames unchanged when under the cap", () => {
+    expect(sampleFrames(["a", "b", "c"], 8)).toEqual(["a", "b", "c"]);
+  });
+  it("always keeps the first and last frame", () => {
+    const many = Array.from({ length: 30 }, (_, i) => `f${i}`);
+    const out = sampleFrames(many, 8);
+    expect(out.length).toBeLessThanOrEqual(8);
+    expect(out[0]).toBe("f0");
+    expect(out[out.length - 1]).toBe("f29");
   });
 });

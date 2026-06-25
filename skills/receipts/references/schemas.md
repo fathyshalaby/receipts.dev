@@ -13,7 +13,8 @@ qa-results.json       visual-QA output (emitted by `receipts qa`)
 media/
   session.webm        recorded Playwright session
   trace.zip           Playwright trace
-  <acId>-before.png   per-claim before screenshot (only when the claim has steps)
+  <acId>-before.png   per-claim before screenshot (only when the claim has steps/nav)
+  <acId>-step<n>.png  per-step interaction frames (the trajectory the judge saw)
   <acId>-after.png    per-claim after screenshot
 ```
 
@@ -100,6 +101,16 @@ deterministically in v0; a future version may drive the browser from
       "screenshots": {
         "before": "media/ac1-before.png | null",
         "after": "media/ac1-after.png"
+      },
+
+      // Optional, added with the frame-sequence + adversarial judging:
+      "frames": ["media/ac1-before.png", "media/ac1-step0.png", "media/ac1-after.png"],
+      // ^ chronological frames the judge actually saw (before → per-step → after).
+      "adversarial": {
+        // Present only when the primary verdict was `pass` and the adversarial
+        // pass ran. `refuted: true` downgrades the verdict to `inconclusive`.
+        "refuted": false,
+        "rationale": "string — what the skeptical second judge saw"
       }
     }
   ],
@@ -107,9 +118,15 @@ deterministically in v0; a future version may drive the browser from
 }
 ```
 
+**Adversarial pass:** every claim the primary judge marks `pass` is re-checked by
+a second judge prompted to *refute* it; a successful refutation downgrades
+`pass → inconclusive` (`reconcileVerdict`). Bound to passing claims only, so it
+costs at most one extra call per pass. Disable with `receipts qa --no-adversarial`.
+
 **Exit code of `receipts qa`:** `0` only when no claim is `fail` or
 `inconclusive`. `pass`/`not_tested`/reasoning-only all exit `0`; any
-`fail`/`inconclusive` exits non-zero so CI can gate.
+`fail`/`inconclusive` (including an adversarial downgrade) exits non-zero so CI
+can gate.
 
 ---
 

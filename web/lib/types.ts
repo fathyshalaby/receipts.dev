@@ -25,6 +25,10 @@ export interface QaResult {
   claim?: string;
   verdict?: QaResultVerdict;
   rationale?: string;
+  /** Chronological frames the judge saw (before → per-step → after). */
+  frames?: string[];
+  /** Adversarial re-check of a claimed pass; `refuted` downgrades it. */
+  adversarial?: { refuted: boolean; rationale: string } | null;
   [key: string]: unknown;
 }
 

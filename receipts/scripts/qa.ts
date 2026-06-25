@@ -1,6 +1,6 @@
-import { chromium } from "playwright";
+import { chromium, type Browser } from "playwright";
 import { spawn, type ChildProcess } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
   ReceiptInput,
@@ -10,15 +10,41 @@ import type {
   AcceptanceCriterion,
 } from "./types";
 import { log, parseFlags, receiptId, VIEWPORTS } from "./util";
-import { judgeEnabled, judgeClaim } from "./judge";
+import { judgeEnabled, judgeClaim, refuteClaim, reconcileVerdict } from "./judge";
 import { navEnabled, llmNavigate } from "./nav";
+
+// Cap intermediate (per-step) frames captured per claim so the judge payload and
+// the receipt stay bounded. before + up to this many mids + after.
+const MAX_MID_FRAMES = 4;
 
 interface QaOptions {
   input: string;
   url?: string;
   start?: string;
   noJudge: boolean;
+  noAdversarial: boolean;
   out?: string;
+}
+
+/**
+ * Launch Chromium, falling back to a system browser channel when the pinned
+ * Playwright build isn't present (locked-down CI / sandbox that can't fetch it).
+ * `RECEIPTS_CHROMIUM_PATH` forces a specific executable.
+ */
+async function launchBrowser(): Promise<Browser> {
+  const execPath = process.env.RECEIPTS_CHROMIUM_PATH;
+  try {
+    return await chromium.launch(execPath ? { executablePath: execPath } : {});
+  } catch (e) {
+    for (const channel of ["chrome", "chromium", "msedge"]) {
+      try {
+        return await chromium.launch({ channel });
+      } catch {
+        /* try the next channel */
+      }
+    }
+    throw e;
+  }
 }
 
 function readInput(p: string): ReceiptInput {
@@ -94,8 +120,13 @@ function exitCodeFor(summary: QaResults["summary"]): number {
   return summary.fail > 0 || summary.inconclusive > 0 ? 1 : 0;
 }
 
-async function runSteps(page: import("playwright").Page, steps: AcceptanceCriterion["steps"]) {
+async function runSteps(
+  page: import("playwright").Page,
+  steps: AcceptanceCriterion["steps"],
+  onStep?: (i: number) => Promise<void>
+) {
   if (!steps) return;
+  let i = 0;
   for (const step of steps) {
     switch (step.action) {
       case "goto":
@@ -121,6 +152,7 @@ async function runSteps(page: import("playwright").Page, steps: AcceptanceCriter
         await page.waitForTimeout(Number(step.value ?? 500));
         break;
     }
+    if (onStep) await onStep(i++);
   }
 }
 
@@ -131,6 +163,7 @@ export async function runQa(argv: string[]): Promise<number> {
     url: flags.url as string | undefined,
     start: flags.start as string | undefined,
     noJudge: flags["no-judge"] === true,
+    noAdversarial: flags["no-adversarial"] === true,
     out: flags.out as string | undefined,
   };
 
@@ -180,12 +213,13 @@ export async function runQa(argv: string[]): Promise<number> {
   const startedAt = new Date();
   let browser;
   try {
-    browser = await chromium.launch();
+    browser = await launchBrowser();
   } catch (e: any) {
     killApp(appProc);
     log.err(
       `could not launch Chromium: ${e?.message ?? e}\n` +
-        `         Install the browser first: npx playwright install chromium`
+        `         Install the browser first: npx playwright install chromium,\n` +
+        `         or point RECEIPTS_CHROMIUM_PATH at an existing Chrome/Chromium binary.`
     );
     return 2;
   }
@@ -209,6 +243,16 @@ export async function runQa(argv: string[]): Promise<number> {
       });
       await page.waitForTimeout(300);
 
+      // Chronological frames the judge will see: before → per-step → after.
+      const frameRels: string[] = [];
+      let mids = 0;
+      const captureMid = async () => {
+        if (mids >= MAX_MID_FRAMES) return;
+        const rel = `media/${c.id}-step${mids++}.png`;
+        await page.screenshot({ path: join(outDir, rel), fullPage: true });
+        frameRels.push(rel);
+      };
+
       // "before" is meaningful when navigation will change the page — either
       // author-provided deterministic steps, or LLM-driven nav from the hint.
       const hasSteps = !!(c.steps && c.steps.length);
@@ -217,30 +261,41 @@ export async function runQa(argv: string[]): Promise<number> {
       let nav: QaResult["nav"] = { mode: "none" };
       if (hasSteps || useLlmNav) {
         beforeRel = `media/${c.id}-before.png`;
-        await page.screenshot({ path: join(outDir, beforeRel), fullPage: false });
+        await page.screenshot({ path: join(outDir, beforeRel), fullPage: true });
+        frameRels.push(beforeRel);
         if (hasSteps) {
-          await runSteps(page, c.steps);
+          await runSteps(page, c.steps, captureMid);
           nav = { mode: "deterministic" };
         } else {
-          const outcome = await llmNavigate(page, c.navigationHint!);
+          const outcome = await llmNavigate(page, c.navigationHint!, captureMid);
           nav = { mode: "llm", note: outcome.note };
           log.info(`   ↳ ${outcome.note}`);
         }
         await page.waitForTimeout(300);
       }
       const afterRel = `media/${c.id}-after.png`;
-      await page.screenshot({ path: join(outDir, afterRel), fullPage: false });
+      await page.screenshot({ path: join(outDir, afterRel), fullPage: true });
+      frameRels.push(afterRel);
 
       let verdict: Verdict = "not_tested";
       let rationale: string | null = null;
+      let adversarial: QaResult["adversarial"] = null;
       if (judging) {
-        const v = await judgeClaim(
-          c,
-          beforeRel ? join(outDir, beforeRel) : null,
-          join(outDir, afterRel)
-        );
+        const framesAbs = frameRels.map((r) => join(outDir, r));
+        const v = await judgeClaim(c, framesAbs);
         verdict = v.verdict;
         rationale = v.rationale;
+        // Don't let a self-authored claim wave itself through: challenge passes.
+        if (verdict === "pass" && !opts.noAdversarial) {
+          const ref = await refuteClaim(c, framesAbs);
+          adversarial = { refuted: ref.refuted, rationale: ref.rationale };
+          const reconciled = reconcileVerdict(verdict, ref.refuted);
+          if (reconciled !== verdict) {
+            verdict = reconciled;
+            rationale = `${rationale}\n\n⚠ Adversarial check refuted this pass: ${ref.rationale}`;
+            log.info(`   ↳ adversarial refuted pass → ${verdict}`);
+          }
+        }
       }
       log.info(`   ↳ ${verdict}${rationale ? ` — ${rationale.slice(0, 80)}` : ""}`);
 
@@ -251,6 +306,8 @@ export async function runQa(argv: string[]): Promise<number> {
         judge: judging ? "llm" : "none",
         rationale,
         screenshots: { before: beforeRel, after: afterRel },
+        frames: frameRels,
+        adversarial,
         nav,
       });
     } catch (e: any) {
@@ -275,12 +332,23 @@ export async function runQa(argv: string[]): Promise<number> {
   const traceRel = "media/trace.zip";
   await context.tracing.stop({ path: join(outDir, traceRel) }).catch(() => {});
   const video = page.video();
+  // Grab the raw recording path before close() so we can remove it after copying
+  // — otherwise the receipt ships (and publishes) the video twice.
+  const rawVideoPath = video ? await video.path().catch(() => null) : null;
   await context.close();
   let videoRel: string | null = null;
   if (video) {
     try {
-      await video.saveAs(join(mediaDir, "session.webm"));
+      const dest = join(mediaDir, "session.webm");
+      await video.saveAs(dest);
       videoRel = "media/session.webm";
+      if (rawVideoPath && resolve(rawVideoPath) !== resolve(dest)) {
+        try {
+          unlinkSync(rawVideoPath);
+        } catch {
+          /* original already gone */
+        }
+      }
     } catch {
       /* video may be unavailable in some environments */
     }

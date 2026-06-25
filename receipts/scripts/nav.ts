@@ -135,8 +135,15 @@ export interface NavOutcome {
  * Plan + execute navigation from a hint. Runs steps best-effort: a step that
  * fails (stale selector, etc.) is skipped, not fatal — the "after" screenshot
  * still captures wherever we got to, and the judge decides the verdict.
+ *
+ * `onStep` is called after each step that actually ran, so the caller can capture
+ * an intermediate frame of the trajectory for the judge.
  */
-export async function llmNavigate(page: import("playwright").Page, hint: string): Promise<NavOutcome> {
+export async function llmNavigate(
+  page: import("playwright").Page,
+  hint: string,
+  onStep?: (ran: number) => Promise<void>
+): Promise<NavOutcome> {
   const elements = await snapshotInteractives(page);
   const text = await callModel(buildNavPrompt(hint, page.url(), elements));
   if (!text) return { mode: "llm", planned: [], ran: 0, note: "LLM navigation unavailable (model error)." };
@@ -147,6 +154,7 @@ export async function llmNavigate(page: import("playwright").Page, hint: string)
     try {
       await runOne(page, step);
       ran++;
+      if (onStep) await onStep(ran);
     } catch {
       // best-effort: skip and continue
     }
