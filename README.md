@@ -79,10 +79,17 @@ That produces `.receipts/demo-task-list/index.html` — open it in any browser. 
 
 ### On your own project
 
+Install the CLI (published as **`@fathyshalaby/receipts`** — the `receipts` name was taken on npm; the `receipts` command is unchanged):
+
+```bash
+npm i -g @fathyshalaby/receipts   # or prefix the steps below with: npx @fathyshalaby/receipts
+npx playwright install chromium
+```
+
 1. Have your agent write a `receipt-input.json` ([schema](skills/receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
-2. `npx receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
-3. `npx receipts build --in .receipts/<id>` and open `index.html`.
-4. _(optional)_ `npx receipts publish --in .receipts/<id>` to push it to Supabase and get a shareable link for the PR — see [Publish to Supabase](#-publish-to-supabase-optional).
+2. `receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
+3. `receipts build --in .receipts/<id>` and open `index.html`.
+4. _(optional)_ `receipts publish --in .receipts/<id>` to push it to Supabase and get a shareable link for the PR — see [Publish to Supabase](#-publish-to-supabase-optional).
 
 ---
 

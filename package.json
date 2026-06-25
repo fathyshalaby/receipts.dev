@@ -1,5 +1,5 @@
 {
-  "name": "receipts",
+  "name": "@fathyshalaby/receipts",
   "version": "0.1.0",
   "description": "Make a coding agent leave receipts: a recorded visual-QA walkthrough + the reasoning behind every PR, packaged as one self-contained artefact a human can judge in 90 seconds.",
   "keywords": [
@@ -11,9 +11,22 @@
     "receipts"
   ],
   "license": "MIT",
+  "author": "Fathy Shalaby (https://github.com/fathyshalaby)",
+  "homepage": "https://github.com/fathyshalaby/nuro#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fathyshalaby/nuro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fathyshalaby/nuro/issues"
+  },
   "type": "module",
   "bin": {
     "receipts": "bin/receipts.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "files": [
     "bin",
@@ -27,6 +40,7 @@
     "receipts": "tsx receipts/scripts/cli.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run",
+    "prepublishOnly": "npm run typecheck && npm run test",
     "demo:serve": "node examples/demo-app/server.mjs",
     "demo": "tsx receipts/scripts/cli.ts qa --input examples/receipt-input.json --no-judge && tsx receipts/scripts/cli.ts build --in .receipts/demo-task-list && tsx receipts/scripts/cli.ts open --in .receipts/demo-task-list"
   },

@@ -1,0 +1,55 @@
+# Publish @fathyshalaby/receipts to npm and cut a GitHub Release.
+#
+# Fires when a v* tag is pushed (cut one AFTER merging to main):
+#   git tag v0.1.0 && git push origin v0.1.0
+# or run manually via "Run workflow" (workflow_dispatch).
+#
+# Requires repo secret NPM_TOKEN (an npm automation token with publish rights to
+# the @fathyshalaby scope). Provenance needs `id-token: write` (set below) and a
+# public repo.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # create the GitHub Release
+  id-token: write   # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+
+      # prepublishOnly also runs these, but failing fast here keeps the log clean.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            `@fathyshalaby/receipts` ${{ github.ref_name }} — watch the work.
+
+            ```bash
+            npx @fathyshalaby/receipts qa --input receipt-input.json
+            ```
+
+            See the [CHANGELOG](https://github.com/fathyshalaby/nuro/blob/main/CHANGELOG.md).
