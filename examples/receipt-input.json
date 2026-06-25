@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1",
+  "task": "Build a tiny task list with an empty state and add-task interaction",
+  "branch": "demo/task-list",
+  "prNumber": null,
+  "targetUrl": "http://localhost:3000",
+  "startCommand": "node examples/demo-app/server.mjs",
+  "acceptanceCriteria": [
+    {
+      "id": "ac1",
+      "claim": "The page heading 'Receipts Demo' is visible",
+      "navigationHint": "open the app root",
+      "viewport": "desktop"
+    },
+    {
+      "id": "ac2",
+      "claim": "On first load with no tasks, an empty state with the text 'No tasks yet' is visible",
+      "navigationHint": "open the app root as a fresh visitor",
+      "viewport": "desktop"
+    },
+    {
+      "id": "ac3",
+      "claim": "After typing a task and clicking Add, the task appears as an item in the list and the empty state is gone",
+      "navigationHint": "type 'Buy milk' into the input and click the Add button",
+      "viewport": "desktop",
+      "steps": [
+        { "action": "fill", "selector": "#task", "value": "Buy milk" },
+        { "action": "click", "selector": "#add" },
+        { "action": "wait", "value": 300 }
+      ]
+    }
+  ],
+  "plan": "Render a controlled task array. Show an empty-state block when length === 0, otherwise render <li> rows. Add on button click or Enter.",
+  "decisions": [
+    "Kept everything in a single static HTML file with vanilla JS so the example has zero dependencies and the demo works out of the box",
+    "Showed a live task count in the subheading so at least one claim is provable from a single screenshot without interaction"
+  ],
+  "rejectedAlternatives": [
+    "A React app for the demo — would add a build step and dependencies, defeating the 'works out of the box' goal",
+    "Persisting tasks to localStorage — out of scope and would complicate the empty-state claim"
+  ],
+  "promptLog": [
+    { "role": "user", "text": "Build a tiny task list demo and leave receipts on it", "ts": null },
+    { "role": "assistant", "text": "Building a single-file task list with an empty state, then running visual QA against three observable claims.", "ts": null }
+  ],
+  "filesChanged": [
+    { "path": "examples/demo-app/index.html", "additions": 96, "deletions": 0, "area": "demo-app" },
+    { "path": "examples/demo-app/server.mjs", "additions": 24, "deletions": 0, "area": "demo-app" }
+  ]
+}

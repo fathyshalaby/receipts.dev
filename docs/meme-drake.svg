@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" font-family="'Rubik', ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f76fa6"/></linearGradient>
+  </defs>
+  <rect width="720" height="460" rx="18" fill="#100a1c"/>
+  <rect x="8" y="8" width="704" height="444" rx="14" fill="none" stroke="#2c2347"/>
+
+  <!-- panel 1: reject -->
+  <rect x="24" y="24" width="320" height="200" rx="12" fill="#160e26" stroke="#241b3c"/>
+  <g transform="translate(110,124)">
+    <circle r="56" fill="#1d1330" stroke="#3a2f55"/>
+    <circle r="56" fill="none" stroke="#ff6b6b" stroke-opacity=".35"/>
+    <path d="M-22,-22 L22,22 M22,-22 L-22,22" stroke="#ff6b6b" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <rect x="360" y="24" width="336" height="200" rx="12" fill="#160e26" stroke="#3a2140"/>
+  <text x="380" y="92" font-size="23" font-weight="600" fill="#ece8f6">Reading a 600-line</text>
+  <text x="380" y="124" font-size="23" font-weight="600" fill="#ece8f6">agent diff at 2am</text>
+  <text x="380" y="156" font-size="23" font-weight="600" fill="#9b91b8">hoping it works</text>
+  <text x="668" y="208" text-anchor="end" font-size="13" fill="#ff6b6b" font-family="monospace">// nope</text>
+
+  <!-- panel 2: approve -->
+  <rect x="24" y="236" width="320" height="200" rx="12" fill="#160e26" stroke="#241b3c"/>
+  <g transform="translate(110,336)">
+    <circle r="56" fill="#15231c" stroke="url(#g)" stroke-width="2"/>
+    <path d="M-26,2 L-8,22 L28,-20" stroke="#36d39a" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <rect x="360" y="236" width="336" height="200" rx="12" fill="#1a1330" stroke="#5b3aa0"/>
+  <text x="380" y="300" font-size="23" font-weight="700" fill="#ece8f6">Opening one receipt,</text>
+  <text x="380" y="332" font-size="23" font-weight="700" fill="#ece8f6">watching the work,</text>
+  <text x="380" y="364" font-size="23" font-weight="700" fill="url(#g)">judging it in 90s</text>
+  <text x="668" y="420" text-anchor="end" font-size="13" fill="#36d39a" font-family="monospace">// receipts</text>
+</svg>

@@ -1,0 +1,25 @@
+{
+  "name": "receipts",
+  "owner": {
+    "name": "Fathy Shalaby",
+    "url": "https://github.com/fathyshalaby"
+  },
+  "description": "Receipts — make your coding agents prove their work.",
+  "plugins": [
+    {
+      "name": "receipts",
+      "source": "./",
+      "description": "A recorded visual-QA walkthrough + reasoning record for a PR, packaged as one self-contained artefact. Triggers on \"QA this and leave receipts on the PR\".",
+      "version": "0.1.0",
+      "homepage": "https://github.com/fathyshalaby/nuro",
+      "category": "testing",
+      "keywords": [
+        "visual-qa",
+        "playwright",
+        "pr-review",
+        "coding-agent",
+        "receipts"
+      ]
+    }
+  ]
+}
