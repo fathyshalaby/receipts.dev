@@ -3,6 +3,8 @@ import { runQa } from "./qa";
 import { runBuild } from "./build";
 import { runOpen } from "./open";
 import { runPublish } from "./publish";
+import { runTokens } from "./tokens";
+import { runLogin, runLogout, runWhoami } from "./login";
 import { generatorVersion } from "./util";
 
 const HELP = `Receipts — watch the work.
@@ -14,6 +16,9 @@ Usage:
   receipts build   --in .receipts/<id>
   receipts open    --in .receipts/<id>
   receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
+  receipts login   --token <T> | --supabase-url <U> --supabase-key <K>
+  receipts logout | whoami
+  receipts tokens  issue|revoke|list        (operator — hosted mode)
   receipts --version | --help
 
 Env:
@@ -50,6 +55,14 @@ async function main(): Promise<number> {
       return runOpen(rest);
     case "publish":
       return runPublish(rest);
+    case "tokens":
+      return runTokens(rest);
+    case "login":
+      return runLogin(rest);
+    case "logout":
+      return runLogout();
+    case "whoami":
+      return runWhoami();
     default:
       console.error(`[receipts] unknown command: ${cmd}\n`);
       console.log(HELP);

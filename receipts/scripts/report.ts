@@ -100,11 +100,16 @@ export function renderReport(m: Manifest): string {
             r.judge
           )})</summary><p>${nl2br(r.rationale)}</p></details>`
         : "";
+      const navNote =
+        r.nav?.mode === "llm"
+          ? `<p class="navnote" title="${esc(r.nav.note ?? "")}">🧭 reached via AI navigation</p>`
+          : "";
       return `
       <div class="claim">
         <div class="claim__hd">${badge(r.verdict)}<span class="claim__id">${esc(
           r.acId
         )}</span><span class="claim__text">${esc(r.claim)}</span></div>
+        ${navNote}
         ${shots}
         ${rationale}
       </div>`;

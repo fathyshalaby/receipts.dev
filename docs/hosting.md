@@ -58,23 +58,33 @@ writes itself.
 
    `--no-verify-jwt` is required — the function does its own bearer-token auth
    against `api_keys`, so Supabase's JWT gate must be off.
-3. Issue a token to a user (store only its hash):
+3. Issue a token to a user with the operator CLI (it generates the token,
+   stores only `sha256(token)`, and prints the raw value once). This needs your
+   service-role creds:
 
-   ```sql
-   -- generate a token client-side, e.g. openssl rand -hex 32, then:
-   insert into api_keys (token_hash, owner_id, label)
-   values (encode(digest('<raw-token>', 'sha256'), 'hex'), '<user-uuid>', 'fathy laptop');
+   ```bash
+   export RECEIPTS_SUPABASE_URL="https://<ref>.supabase.co"
+   export RECEIPTS_SUPABASE_KEY="<service-role-key>"
+   receipts tokens issue --label "fathy laptop" --owner <user-uuid>
+   #   → prints the token once; receipts tokens list / revoke <id|token> to manage
    ```
+
+   (Equivalent raw SQL, if you prefer:
+   `insert into api_keys (token_hash, owner_id, label) values (encode(digest('<raw-token>','sha256'),'hex'), '<user-uuid>', 'fathy laptop');`)
 4. Bake the function URL into the CLI default (`DEFAULT_INGEST_URL` in
    `receipts/scripts/publish.ts`) or have users set `RECEIPTS_INGEST_URL`.
 
-**End-user usage:**
+**End-user usage** — save the token once with `receipts login`, then publish:
 
 ```bash
-export RECEIPTS_TOKEN="<raw-token>"
-# export RECEIPTS_INGEST_URL="https://<ref>.functions.supabase.co/ingest"  # if not built in
+receipts login --token "<raw-token>"               # stored 0600 in ~/.receipts/config.json
+# receipts login --token "<raw-token>" --ingest-url "https://<ref>.functions.supabase.co/ingest"
 receipts publish --in .receipts/<id>
+# receipts whoami   → show what's configured     receipts logout → forget it
 ```
+
+Env vars (`RECEIPTS_TOKEN`, `RECEIPTS_INGEST_URL`) still work and always
+override the saved config, so CI stays env-driven.
 
 ### Protocol
 
@@ -97,7 +107,26 @@ under an unguessable `uuid` prefix, so a public bucket is effectively
 **signed URLs** instead — change `public` to `false` in the migration and have
 the ingest function / BYO publish return `createSignedUrl(...)` links with an
 expiry. The DB rows already carry `visibility` (`unlisted` | `public` |
-`private`) to drive a future hosted gallery.
+`private`) to drive the gallery's access rules.
+
+---
+
+## Gallery (web app)
+
+[`web/`](../web/) is a Next.js app — the hosted "multiplayer review" surface.
+It reads the `receipts` table (it never writes) and lets a signed-in user browse
+their receipts, filter by repo/verdict, and open a detail view that embeds the
+report and links the video. Owner-scoped rows come from **hosted-mode** publishes
+(where the ingest function sets `owner_id`); BYO publishes leave `owner_id` null.
+
+```bash
+cd web
+cp .env.example .env.local   # NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
+npm install && npm run dev
+```
+
+Auth is Supabase email magic-link; access is enforced by the same RLS policies
+in the migration (`receipts_owner_read` + public/unlisted read).
 
 ## What's stored
 

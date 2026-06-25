@@ -104,3 +104,5 @@ a:hover { text-decoration: underline; }
 /* Footer */
 .ft { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
   margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+
+.navnote { margin: 4px 0 8px; font-size: 13px; color: #5ed6e8; font-weight: 600; }

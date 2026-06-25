@@ -67,6 +67,8 @@ export interface QaResult {
     before: string | null;
     after: string;
   };
+  /** How the "after" state was reached. `llm` = navigated from navigationHint. */
+  nav?: { mode: "deterministic" | "llm" | "none"; note?: string };
 }
 
 export interface QaSummary {

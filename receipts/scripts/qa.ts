@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { log, parseFlags, receiptId, VIEWPORTS } from "./util";
 import { judgeEnabled, judgeClaim } from "./judge";
+import { navEnabled, llmNavigate } from "./nav";
 
 interface QaOptions {
   input: string;
@@ -208,13 +209,23 @@ export async function runQa(argv: string[]): Promise<number> {
       });
       await page.waitForTimeout(300);
 
-      // "before" only meaningful when steps will change the page.
+      // "before" is meaningful when navigation will change the page — either
+      // author-provided deterministic steps, or LLM-driven nav from the hint.
       const hasSteps = !!(c.steps && c.steps.length);
+      const useLlmNav = !hasSteps && !!c.navigationHint && navEnabled();
       let beforeRel: string | null = null;
-      if (hasSteps) {
+      let nav: QaResult["nav"] = { mode: "none" };
+      if (hasSteps || useLlmNav) {
         beforeRel = `media/${c.id}-before.png`;
         await page.screenshot({ path: join(outDir, beforeRel), fullPage: false });
-        await runSteps(page, c.steps);
+        if (hasSteps) {
+          await runSteps(page, c.steps);
+          nav = { mode: "deterministic" };
+        } else {
+          const outcome = await llmNavigate(page, c.navigationHint!);
+          nav = { mode: "llm", note: outcome.note };
+          log.info(`   ↳ ${outcome.note}`);
+        }
         await page.waitForTimeout(300);
       }
       const afterRel = `media/${c.id}-after.png`;
@@ -240,6 +251,7 @@ export async function runQa(argv: string[]): Promise<number> {
         judge: judging ? "llm" : "none",
         rationale,
         screenshots: { before: beforeRel, after: afterRel },
+        nav,
       });
     } catch (e: any) {
       // A flaky claim should not crash the whole run — record it as inconclusive.

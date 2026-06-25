@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "
 import { join, resolve, relative, posix } from "node:path";
 import type { Manifest } from "./types";
 import { log, parseFlags } from "./util";
+import { loadConfig, resolveCredentials, type ReceiptsConfig } from "./credentials";
 
 // Default hosted ("ours") ingest endpoint. The maintainer wires a real Supabase
 // edge function URL here once the project is provisioned; until then, hosted-mode
@@ -9,6 +10,13 @@ import { log, parseFlags } from "./util";
 const DEFAULT_INGEST_URL = process.env.RECEIPTS_INGEST_URL || "";
 
 const BUCKET = "receipts";
+
+/** Which publish path the resolved creds select. Pure — unit-testable. */
+export function selectMode(creds: ReceiptsConfig): "byo" | "hosted" | "none" {
+  if (creds.supabaseUrl && creds.supabaseKey) return "byo";
+  if (creds.token) return "hosted";
+  return "none";
+}
 
 interface PublishRecord {
   schemaVersion: "1";
@@ -231,15 +239,15 @@ export async function runPublish(argv: string[]): Promise<number> {
     return 2;
   }
 
-  // Mode selection: BYO wins when its env is present; otherwise hosted token.
-  const byoUrl = process.env.RECEIPTS_SUPABASE_URL;
-  const byoKey = process.env.RECEIPTS_SUPABASE_KEY;
-  const token = process.env.RECEIPTS_TOKEN;
-  const ingestUrl = (flags["ingest-url"] as string) || DEFAULT_INGEST_URL;
+  // Resolve creds from env (wins) then ~/.receipts/config.json (receipts login).
+  const creds = resolveCredentials(process.env, loadConfig());
+  const byoUrl = creds.supabaseUrl;
+  const byoKey = creds.supabaseKey;
+  const token = creds.token;
+  const ingestUrl = (flags["ingest-url"] as string) || creds.ingestUrl || DEFAULT_INGEST_URL;
 
   if (flags["dry-run"]) {
-    const mode = byoUrl && byoKey ? "byo" : token ? "hosted" : "none";
-    log.info(`dry run — mode: ${mode}, ${files.length} files, prefix: ${storagePrefix(m)}`);
+    log.info(`dry run — mode: ${selectMode(creds)}, ${files.length} files, prefix: ${storagePrefix(m)}`);
     for (const f of files) log.info(`  • ${f.rel} (${f.contentType})`);
     return 0;
   }

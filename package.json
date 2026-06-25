@@ -26,6 +26,7 @@
   "scripts": {
     "receipts": "tsx receipts/scripts/cli.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
     "demo:serve": "node examples/demo-app/server.mjs",
     "demo": "tsx receipts/scripts/cli.ts qa --input examples/receipt-input.json --no-judge && tsx receipts/scripts/cli.ts build --in .receipts/demo-task-list && tsx receipts/scripts/cli.ts open --in .receipts/demo-task-list"
   },
@@ -34,8 +35,9 @@
     "tsx": "4.19.2"
   },
   "devDependencies": {
+    "@types/node": "22.10.2",
     "typescript": "5.7.2",
-    "@types/node": "22.10.2"
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=18.18"

@@ -144,11 +144,14 @@ receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-ju
 receipts build   --in .receipts/<id>
 receipts open    --in .receipts/<id>
 receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
+receipts login   --token <T> | --supabase-url <U> --supabase-key <K>   ·   logout · whoami
+receipts tokens  issue|revoke|list                                    (operator — hosted mode)
 ```
 
-- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures before/after screenshots, and — with an API key — asks a vision model for a verdict per claim.
+- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures before/after screenshots, and — with an API key — asks a vision model for a verdict per claim. A claim with deterministic `steps` runs them as-is; a claim with only a plain-language `navigationHint` is reached by **LLM-driven navigation** (it plans Playwright steps from the hint).
 - **Exit code:** `qa` exits **non-zero** if any claim **fails or is inconclusive**, so CI can gate. Reasoning-only and visual-only runs exit `0`.
 - **`publish`** uploads the report + media to Supabase and writes `publish.json` with the hosted `reportUrl` + `videoUrl`. Optional — local receipts need nothing.
+- **`login` / `tokens`** save publish credentials locally (`~/.receipts/config.json`, env always wins) and — for an operator — mint/revoke hosted upload tokens.
 
 ### Environment
 
@@ -182,6 +185,10 @@ A receipt is a **local, self-contained folder by default — no hosting needed.*
 - **Hosted ("ours")** — set `RECEIPTS_TOKEN`; the CLI POSTs an ingest endpoint that holds the service key, so end users never do.
 
 Both write to the same schema (`manifest.json` stays the source of truth). Apply [`supabase/migrations/0001_receipts.sql`](supabase/migrations/0001_receipts.sql) (tables, RLS, storage bucket); the hosted path also deploys [`supabase/functions/ingest`](supabase/functions/ingest/). **Full setup, the ingest protocol, and access-control notes are in [`docs/hosting.md`](docs/hosting.md).**
+
+### Gallery
+
+[`web/`](web/) is a Next.js app — the hosted "multiplayer review" surface. Sign in (Supabase magic-link), browse your published receipts, filter by repo/verdict, and open a detail view that embeds the report and links the video. It only ever **reads** the `receipts` table (RLS-scoped); `cd web && npm install && npm run dev`.
 
 ## 🚀 GitHub Action
 
