@@ -45,7 +45,7 @@ export default async function ReceiptDetailPage({
       <SiteHeader email={user.email} />
       <main className="container">
         <div className="detail-head">
-          <Link href="/" className="back-link">
+          <Link href="/gallery" className="back-link">
             ← All receipts
           </Link>
           <VerdictBadge verdict={receipt.overall_verdict} />

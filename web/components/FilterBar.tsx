@@ -25,7 +25,7 @@ export function FilterBar({ repos }: { repos: string[] }) {
       if (value) next.set(key, value);
       else next.delete(key);
       const qs = next.toString();
-      router.push(qs ? `/?${qs}` : "/");
+      router.push(qs ? `/gallery?${qs}` : "/gallery");
     },
     [params, router]
   );
@@ -73,7 +73,7 @@ export function FilterBar({ repos }: { repos: string[] }) {
       {(repo || verdict) && (
         <button
           className="btn btn--ghost btn--sm"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/gallery")}
           type="button"
         >
           Clear
