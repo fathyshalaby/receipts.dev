@@ -45,7 +45,7 @@
     "demo": "tsx receipts/scripts/cli.ts qa --input examples/receipt-input.json --no-judge && tsx receipts/scripts/cli.ts build --in .receipts/demo-task-list && tsx receipts/scripts/cli.ts open --in .receipts/demo-task-list"
   },
   "dependencies": {
-    "playwright": "1.49.1",
+    "playwright": "1.55.1",
     "tsx": "4.19.2"
   },
   "devDependencies": {
