@@ -5,7 +5,7 @@ export function SiteHeader({ email }: { email?: string | null }) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link href="/" className="brand">
+        <Link href="/gallery" className="brand">
           <span className="brand__dot" />
           Receipts
         </Link>

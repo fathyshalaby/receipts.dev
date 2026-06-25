@@ -1,10 +1,12 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
 /**
  * Refreshes the Supabase auth session cookie on every matched request and
- * protects the gallery (`/`) and detail (`/r/*`) routes — unauthenticated
- * users are redirected to `/login`.
+ * protects the gallery (`/gallery`) and detail (`/r/*`) routes — unauthenticated
+ * users are redirected to `/login`. The marketing landing at `/` stays public.
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -17,7 +19,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: CookieToSet[]) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -36,7 +38,10 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isProtected = pathname === "/" || pathname.startsWith("/r/");
+  const isProtected =
+    pathname === "/gallery" ||
+    pathname.startsWith("/gallery/") ||
+    pathname.startsWith("/r/");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();

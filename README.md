@@ -197,7 +197,12 @@ Both write to the same schema (`manifest.json` stays the source of truth). Apply
 
 ### Gallery
 
-[`web/`](web/) is a Next.js app — the hosted "multiplayer review" surface. Sign in (Supabase magic-link), browse your published receipts, filter by repo/verdict, and open a detail view that embeds the report and links the video. It only ever **reads** the `receipts` table (RLS-scoped); `cd web && npm install && npm run dev`.
+[`web/`](web/) is a Next.js app with two surfaces:
+
+- **`/`** — the public marketing **landing page** (the project's front door).
+- **`/gallery`** — the hosted **"multiplayer review"** surface (the cloud solution). Sign in (Supabase magic-link), browse your published receipts, filter by repo/verdict, and open a detail view that embeds the report and links the video. It only ever **reads** the `receipts` table (RLS-scoped).
+
+`cd web && npm install && npm run dev`.
 
 ## 🚀 GitHub Action
 
@@ -205,7 +210,7 @@ Both write to the same schema (`manifest.json` stays the source of truth). Apply
 
 ## 🌐 Landing page
 
-A static marketing site lives in [`site/`](site/) — one self-contained `index.html` + `styles.css`, no build step. Open it locally, or deploy to GitHub Pages with [`.github/workflows/pages.yml`](.github/workflows/pages.yml).
+The marketing landing page is the [`web/`](web/) Next.js app's `/` route ([`web/app/page.tsx`](web/app/page.tsx) + [`web/app/landing.css`](web/app/landing.css)) — so the project's front door and the cloud review gallery deploy together as one app (e.g. on Vercel).
 
 ---
 
