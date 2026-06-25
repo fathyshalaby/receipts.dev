@@ -184,6 +184,8 @@ Receipts ships as a **Claude Code plugin** ([`.claude-plugin/`](.claude-plugin/)
 
 Once installed, it triggers on prompts like _"QA this and leave receipts on the PR"_ and runs the full flow itself: write `receipt-input.json` from session → `receipts qa` → `receipts build` → _(optional)_ `receipts publish` → surface the link. The skill is also usable standalone (drop [`skills/receipts/`](skills/receipts/) into `.claude/skills/`).
 
+> **Community directory.** This repo *is* a valid marketplace, so the two commands above work for anyone today. To also list Receipts in the official [`anthropics/claude-plugins-community`](https://github.com/anthropics/claude-plugins-community) directory, submit it at **[clau.de/plugin-directory-submission](https://clau.de/plugin-directory-submission)** (point it at `github.com/fathyshalaby/nuro`). Direct PRs to that repo are auto-closed — every listing flows through claude.ai, an automated security scan, and manual approval.
+
 ## 🗄️ Publish to Supabase (optional)
 
 A receipt is a **local, self-contained folder by default — no hosting needed.** `receipts publish` is the optional step that puts it behind a URL so a PR comment can link to **the hosted report** _and_ **the raw video**. Two modes, picked from the environment:
