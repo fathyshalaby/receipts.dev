@@ -16,6 +16,9 @@
     "@supabase/supabase-js": "^2.47.0",
     "@supabase/ssr": "^0.5.2"
   },
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
   "devDependencies": {
     "typescript": "^5.7.0",
     "@types/node": "^22.10.0",
