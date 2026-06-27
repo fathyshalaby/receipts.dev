@@ -77,7 +77,7 @@ npx receipts build --in .receipts/demo-task-list
 npx receipts open  --in .receipts/demo-task-list
 ```
 
-That produces `.receipts/demo-task-list/index.html` — open it in any browser. Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get **LLM-judged pass/fail verdicts** per claim.
+That produces `.receipts/demo-task-list/index.html` — open it in any browser. Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get **LLM-judged pass/fail verdicts** per claim. Add `--contract examples/acceptance-contract.json` to QA an **independently-authored** set of claims — the report tags them *contract* instead of *self-graded*. Then `npx receipts verify --in .receipts/demo-task-list` proves the receipt wasn't edited.
 
 ### On your own project
 

@@ -1,0 +1,28 @@
+{
+  "_comment": "An INDEPENDENT acceptance contract — the claims a reviewer/issue sets BEFORE the work, separate from receipt-input.json (which the agent writes). Run: receipts qa --input examples/receipt-input.json --contract examples/acceptance-contract.json --no-judge  — and watch the report tag each claim 'contract' (independent) instead of 'self-graded'.",
+  "acceptanceCriteria": [
+    {
+      "id": "ac1",
+      "claim": "The page heading 'Receipts Demo' is visible",
+      "navigationHint": "open the app root",
+      "viewport": "desktop"
+    },
+    {
+      "id": "ac2",
+      "claim": "On first load with no tasks, an empty state with the text 'No tasks yet' is visible",
+      "navigationHint": "open the app root as a fresh visitor",
+      "viewport": "desktop"
+    },
+    {
+      "id": "ac3",
+      "claim": "After adding a task, it appears as an item in the list and the empty state is gone",
+      "navigationHint": "type a task into the input and click Add",
+      "viewport": "desktop",
+      "steps": [
+        { "action": "fill", "selector": "#task", "value": "Buy milk" },
+        { "action": "click", "selector": "#add" },
+        { "action": "wait", "value": 300 }
+      ]
+    }
+  ]
+}
