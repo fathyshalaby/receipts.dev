@@ -1,9 +1,18 @@
 // Data contracts — the spine of the product (PRD §8).
 // These types are the single source of truth shared by qa, build and report.
 
+import type { Integrity } from "./integrity";
+
 export type Viewport = "desktop" | "mobile" | "tablet" | null;
 export type Verdict = "pass" | "fail" | "inconclusive" | "not_tested";
 export type Judge = "llm" | "none";
+
+/**
+ * Who authored an acceptance claim. `agent` = written by the same agent that did
+ * the work (self-graded — the weak case). `contract`/`issue`/`human` = authored
+ * independently of the implementation (the trustworthy case).
+ */
+export type ClaimSource = "agent" | "contract" | "issue" | "human";
 
 /** Optional deterministic navigation step (v0 extension — see references/schemas.md). */
 export interface QaStep {
@@ -26,6 +35,8 @@ export interface AcceptanceCriterion {
   path?: string | null;
   /** Optional deterministic steps run before the "after" screenshot. */
   steps?: QaStep[];
+  /** Provenance — defaults to `agent` for input claims, `contract` for `--contract` claims. */
+  source?: ClaimSource;
 }
 
 export interface PromptLogEntry {
@@ -75,6 +86,8 @@ export interface QaResult {
    * the verdict to `inconclusive` (see reconcileVerdict).
    */
   adversarial?: { refuted: boolean; rationale: string } | null;
+  /** Provenance of the claim — carried through so the report can flag self-grading. */
+  source?: ClaimSource;
   /** How the "after" state was reached. `llm` = navigated from navigationHint. */
   nav?: { mode: "deterministic" | "llm" | "none"; note?: string };
 }
@@ -97,6 +110,8 @@ export interface QaResults {
   reasoningOnly: boolean;
   results: QaResult[];
   summary: QaSummary;
+  /** Run-level notes (e.g. judge-budget exhausted, trace pruned, self-graded claims). */
+  notes?: string[];
 }
 
 export type OverallVerdict = "pass" | "fail" | "reasoning-only" | "visual-only";
@@ -111,4 +126,6 @@ export interface Manifest {
   commit: string | null;
   input: ReceiptInput;
   qa: QaResults;
+  /** Tamper-evidence: content hashes (+ optional HMAC signature). Added by `build`. */
+  integrity?: Integrity;
 }

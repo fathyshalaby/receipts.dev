@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import type { ReceiptInput, QaResults, Manifest, OverallVerdict } from "./types";
 import { log, parseFlags, generatorVersion, gitInfo } from "./util";
 import { renderReport } from "./report";
+import { computeIntegrity } from "./integrity";
 
 function readJson<T>(p: string): T {
   return JSON.parse(readFileSync(p, "utf8"));
@@ -46,11 +47,25 @@ export function runBuild(argv: string[]): number {
     qa,
   };
 
+  // Tamper-evidence: hash the data + evidence files (and HMAC-sign if a key is
+  // present), so `receipts verify` can prove the receipt wasn't hand-edited.
+  const signingKey = process.env.RECEIPTS_SIGNING_KEY || undefined;
+  manifest.integrity = computeIntegrity(
+    manifest as unknown as Record<string, unknown>,
+    inDir,
+    signingKey
+  );
+
   writeFileSync(join(inDir, "manifest.json"), JSON.stringify(manifest, null, 2));
   const html = renderReport(manifest);
   writeFileSync(join(inDir, "index.html"), html);
 
   log.ok(`built receipt → ${join(inDir, "index.html")}  (overall: ${manifest.overallVerdict})`);
+  log.info(
+    signingKey
+      ? `integrity: hashed + HMAC-signed (verify with: receipts verify --in ${flags.in || inDir})`
+      : `integrity: content-hashed (verify with: receipts verify --in ${flags.in || inDir})`
+  );
   log.info(`open it with: receipts open --in ${flags.in || inDir}`);
   return 0;
 }

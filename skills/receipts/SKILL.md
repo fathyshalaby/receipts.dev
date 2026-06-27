@@ -89,6 +89,13 @@ verdict per claim. Without an API key it runs **visual-only** (verdicts =
 `receipts qa` exits non-zero if any claim **fails or is inconclusive** (so CI can
 gate). Reasoning-only and visual-only runs exit 0.
 
+**Stronger receipts — independent claims:** if acceptance criteria were written
+*before* the work (e.g. from the issue), put them in their own file and pass
+`receipts qa --contract claims.json`. They're tagged as independently authored;
+a run where every claim was agent-written is flagged **self-graded** in the
+report. Every `pass` is also re-checked by an adversarial judge that tries to
+refute it (downgrades to `inconclusive`); disable with `--no-adversarial`.
+
 ### 3. Build the report
 
 ```bash
@@ -144,6 +151,11 @@ uploads the folder as an artefact, and comments the links on the PR.
 - Receipt folders are gitignored by default (CI artefact is the canonical
   delivery). To let reviewers see the receipt in the PR diff, force-add it:
   `git add -f .receipts/<id>`.
+- A built receipt is **tamper-evident**: `build` writes content hashes (and an
+  HMAC signature if `RECEIPTS_SIGNING_KEY` is set). Run `receipts verify --in
+  .receipts/<id>` to prove it wasn't edited after the fact (CI-gateable).
+- Unsure the machine can produce a receipt? `receipts doctor` checks Node,
+  whether Chromium launches, and the API-key mode in one command.
 - This skill **documents and demonstrates**; it does not critique the code or
   emit review comments. That is deliberate (see README "Non-goals").
 - Full data contracts: `references/schemas.md`.

@@ -116,3 +116,23 @@ a:hover { text-decoration: underline; }
 .frames { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .frames__label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .frames img { height: 64px; width: auto; border: 1px solid var(--border); border-radius: 6px; display: block; }
+
+/* Claim provenance chip */
+.src {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); margin-left: auto;
+  color: var(--muted); white-space: nowrap;
+}
+.src--agent { color: var(--warn); border-color: rgba(255,180,84,.4); background: rgba(255,180,84,.07); }
+.src--contract, .src--issue, .src--human { color: var(--pass); border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.07); }
+
+/* Run-level notes (self-grading warning, budget, trace pruned) */
+.notes { margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.note {
+  margin: 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 3px solid var(--warn);
+  background: var(--panel-2); border-radius: 6px; color: var(--muted); font-size: 13px;
+}
+
+/* Integrity footer chip */
+.intg { color: var(--muted); }
+.intg code { color: var(--fg); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; }

@@ -5,6 +5,13 @@ import { resolveCredentials } from "../receipts/scripts/credentials";
 import { receiptId } from "../receipts/scripts/util";
 import { sha256Hex } from "../receipts/scripts/tokens";
 import { reconcileVerdict, sampleFrames } from "../receipts/scripts/judge";
+import { mergeCriteria } from "../receipts/scripts/qa";
+import {
+  canonicalize,
+  hmacSha256Hex,
+  computeManifestHash,
+  signaturePayload,
+} from "../receipts/scripts/integrity";
 
 describe("parseNavSteps", () => {
   it("keeps valid steps and coerces shape", () => {
@@ -127,5 +134,66 @@ describe("sampleFrames", () => {
     expect(out.length).toBeLessThanOrEqual(8);
     expect(out[0]).toBe("f0");
     expect(out[out.length - 1]).toBe("f29");
+  });
+});
+
+describe("mergeCriteria", () => {
+  const input: any = { acceptanceCriteria: [{ id: "a", claim: "A" }] };
+  it("tags input claims as agent-authored (self-graded)", () => {
+    const out = mergeCriteria(input);
+    expect(out).toEqual([{ id: "a", claim: "A", source: "agent" }]);
+  });
+  it("an independent contract overrides by id and is tagged `contract`", () => {
+    const out = mergeCriteria(input, [
+      { id: "a", claim: "A2" } as any,
+      { id: "b", claim: "B" } as any,
+    ]);
+    expect(out).toHaveLength(2);
+    const a = out.find((c) => c.id === "a")!;
+    expect(a.claim).toBe("A2");
+    expect(a.source).toBe("contract");
+    expect(out.find((c) => c.id === "b")!.source).toBe("contract");
+  });
+});
+
+describe("canonicalize", () => {
+  it("sorts object keys recursively so the hash is stable", () => {
+    expect(canonicalize({ b: 1, a: 2 })).toBe('{"a":2,"b":1}');
+    expect(canonicalize({ a: { d: 1, c: 2 }, b: [3, { f: 1, e: 2 }] })).toBe(
+      '{"a":{"c":2,"d":1},"b":[3,{"e":2,"f":1}]}',
+    );
+  });
+  it("is order-independent for the same data", () => {
+    expect(canonicalize({ x: 1, y: 2 })).toBe(canonicalize({ y: 2, x: 1 }));
+  });
+});
+
+describe("hmacSha256Hex", () => {
+  it("matches the RFC test vector", () => {
+    expect(hmacSha256Hex("key", "The quick brown fox jumps over the lazy dog")).toBe(
+      "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8",
+    );
+  });
+});
+
+describe("computeManifestHash", () => {
+  it("ignores the integrity field (so it can be embedded after hashing)", () => {
+    const withSig = { schemaVersion: "1", input: { task: "x" }, integrity: { algo: "sha256" } };
+    const without = { schemaVersion: "1", input: { task: "x" } };
+    expect(computeManifestHash(withSig)).toBe(computeManifestHash(without));
+  });
+  it("changes when the data changes", () => {
+    expect(computeManifestHash({ input: { task: "x" } })).not.toBe(
+      computeManifestHash({ input: { task: "y" } }),
+    );
+  });
+});
+
+describe("signaturePayload", () => {
+  it("is stable regardless of file-map insertion order", () => {
+    expect(signaturePayload("M", { b: "2", a: "1" })).toBe(
+      signaturePayload("M", { a: "1", b: "2" }),
+    );
+    expect(signaturePayload("M", { a: "1", b: "2" })).toBe("M\na:1\nb:2");
   });
 });
