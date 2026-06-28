@@ -24,7 +24,9 @@
 
 ---
 
-A Claude skill **(and CLI)** that makes a coding agent leave **receipts**: a recorded visual-QA walkthrough **+** the reasoning behind every PR, packaged into **one self-contained file a human can judge in ~90 seconds.**
+A Claude skill **(and CLI)** that makes a coding agent leave **receipts**: a recorded visual-QA walkthrough **+** the reasoning behind every PR, packaged into **one self-contained folder a human can judge in ~90 seconds.**
+
+> **One project, a few names:** the repo is **`fathyshalaby/receipts.dev`** (formerly `nuro`), the npm package is **`@fathyshalaby/receipts`** (the bare `receipts` name was taken), and the command is just `receipts`. They're all the same thing.
 
 <div align="center">
 <img src="docs/demo.svg" alt="receipts qa then build, running in a terminal" width="88%" />
@@ -65,7 +67,7 @@ Existing tools either **review the code** (CodeRabbit, Qodo, Greptile, Bugbot), 
 ## ⚡ Quickstart (5 minutes)
 
 ```bash
-git clone https://github.com/fathyshalaby/nuro && cd nuro
+git clone https://github.com/fathyshalaby/receipts.dev && cd receipts.dev
 npm install
 npx playwright install chromium
 
@@ -75,7 +77,7 @@ npx receipts build --in .receipts/demo-task-list
 npx receipts open  --in .receipts/demo-task-list
 ```
 
-That produces `.receipts/demo-task-list/index.html` — open it in any browser. Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get **LLM-judged pass/fail verdicts** per claim.
+That produces `.receipts/demo-task-list/index.html` — open it in any browser. Add `RECEIPTS_API_KEY` (Anthropic) and drop `--no-judge` to get **LLM-judged pass/fail verdicts** per claim. Add `--contract examples/acceptance-contract.json` to QA an **independently-authored** set of claims — the report tags them *contract* instead of *self-graded*. Then `npx receipts verify --in .receipts/demo-task-list` proves the receipt wasn't edited.
 
 ### On your own project
 
@@ -84,7 +86,10 @@ Install the CLI (published as **`@fathyshalaby/receipts`** — the `receipts` na
 ```bash
 npm i -g @fathyshalaby/receipts   # or prefix the steps below with: npx @fathyshalaby/receipts
 npx playwright install chromium
+receipts doctor                   # preflight: Node, Chromium launches, API key? — fix anything it flags
 ```
+
+> **Runs locally on your laptop.** Everything except the optional LLM judge and `receipts publish` happens on your machine — `qa` boots your app, drives a local Chromium, and writes the receipt folder. No account, no upload. `receipts doctor` confirms the box can do it; `npm run demo` proves the whole flow end-to-end.
 
 1. Have your agent write a `receipt-input.json` ([schema](skills/receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
 2. `receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
@@ -120,11 +125,12 @@ Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent r
 | | Section | What it shows |
 |---|---|---|
 | 🎥 | **Watch the work** | The recorded Playwright session, embedded. Lead with the video — it's the hook. |
-| 🟢🔴 | **Expected vs actual** | Per claim: before/after screenshots side by side, a pass/fail verdict, the model's rationale. |
+| 🟢🔴 | **Expected vs actual** | Per claim: the before→after frame sequence, a pass/fail verdict judged from those frames, the model's rationale, and an adversarial re-check on every pass. |
 | 🧠 | **How the agent thought** | Plan, key decisions, the alternatives it rejected and why, plus a collapsible prompt log. |
 | 📁 | **Files changed** | Grouped by area, with additions/deletions — so the diff has context. |
 | 📦 | **Self-contained** | Inline CSS/JS, media co-located, no CDN, no network. A file in your repo or a CI artefact. |
 | 🚦 | **CI-gateable** | `receipts qa` exits non-zero on any failing claim. Backend-only PR? It degrades to reasoning-only. |
+| 🔒 | **Tamper-evident** | `build` content-hashes the data + media (and HMAC-signs with a key); `receipts verify` fails if a receipt was edited after the fact. |
 
 ---
 
@@ -147,15 +153,22 @@ Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent r
 ## 🛠️ CLI
 
 ```
-receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--contract claims.json]
+                 [--no-judge] [--no-adversarial] [--max-judge-calls N] [--out DIR]
 receipts build   --in .receipts/<id>
+receipts verify  --in .receipts/<id> [--key <K>]      (tamper-check the receipt)
+receipts doctor                                       (preflight: can this machine make a receipt?)
 receipts open    --in .receipts/<id>
 receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
 receipts login   --token <T> | --supabase-url <U> --supabase-key <K>   ·   logout · whoami
 receipts tokens  issue|revoke|list                                    (operator — hosted mode)
 ```
 
-- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures before/after screenshots, and — with an API key — asks a vision model for a verdict per claim. A claim with deterministic `steps` runs them as-is; a claim with only a plain-language `navigationHint` is reached by **LLM-driven navigation** (it plans Playwright steps from the hint).
+- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures the **chronological frame sequence** (before → per-step → after), and — with an API key — asks a vision model for a verdict per claim from those frames. A claim with deterministic `steps` runs them as-is; a claim with only a plain-language `navigationHint` is reached by **LLM-driven navigation** (it plans Playwright steps from the hint).
+- **Adversarial check:** every claim the judge marks `pass` is re-checked by a second, skeptical judge prompted to *refute* it — a successful refutation downgrades `pass → inconclusive` so a self-authored claim can't wave itself through. Disable with `--no-adversarial`.
+- **`verify`** recomputes the receipt's content hashes (and an optional HMAC signature) and **fails non-zero if anything was edited after build** — so a receipt is a tamper-evident artefact, not a folder the author can doctor. `build` writes the integrity block; set `RECEIPTS_SIGNING_KEY` to also sign it.
+- **`doctor`** is a one-command laptop preflight: it checks your Node version, that **Chromium actually launches**, and whether an API key is set — then tells you exactly what to fix. Run it first.
+- **Claims as a contract:** pass `--contract claims.json` to QA acceptance criteria authored **independently of the work** (e.g. from the issue). Each claim's provenance is shown in the report, and a run where every claim was agent-authored is flagged as *self-graded*.
 - **Exit code:** `qa` exits **non-zero** if any claim **fails or is inconclusive**, so CI can gate. Reasoning-only and visual-only runs exit `0`.
 - **`publish`** uploads the report + media to Supabase and writes `publish.json` with the hosted `reportUrl` + `videoUrl`. Optional — local receipts need nothing.
 - **`login` / `tokens`** save publish credentials locally (`~/.receipts/config.json`, env always wins) and — for an operator — mint/revoke hosted upload tokens.
@@ -166,6 +179,9 @@ receipts tokens  issue|revoke|list                                    (operator 
 |---|---|
 | `RECEIPTS_API_KEY` | Anthropic API key for the vision judge. Omit → **visual-only** mode. |
 | `RECEIPTS_MODEL` | Judge model id (default `claude-sonnet-4-6`). |
+| `RECEIPTS_CHROMIUM_PATH` | Path to a system Chrome/Chromium binary, used as a fallback when the pinned Playwright build isn't installed (locked-down CI/sandbox). |
+| `RECEIPTS_MAX_JUDGE_CALLS` | Cost ceiling: max vision-model calls per run (primary + adversarial). `0`/unset = unlimited. |
+| `RECEIPTS_SIGNING_KEY` | HMAC key — `build` signs the receipt and `verify` checks the signature (authenticity, not just integrity). |
 | `RECEIPTS_SUPABASE_URL` / `RECEIPTS_SUPABASE_KEY` | **Publish (BYO):** your own Supabase project URL + service-role key. |
 | `RECEIPTS_TOKEN` / `RECEIPTS_INGEST_URL` | **Publish (hosted):** upload token + ingest endpoint for the shared instance. |
 

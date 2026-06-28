@@ -13,7 +13,8 @@ qa-results.json       visual-QA output (emitted by `receipts qa`)
 media/
   session.webm        recorded Playwright session
   trace.zip           Playwright trace
-  <acId>-before.png   per-claim before screenshot (only when the claim has steps)
+  <acId>-before.png   per-claim before screenshot (only when the claim has steps/nav)
+  <acId>-step<n>.png  per-step interaction frames (the trajectory the judge saw)
   <acId>-after.png    per-claim after screenshot
 ```
 
@@ -39,6 +40,7 @@ The intent/reasoning side. The agent populates this from its own session.
       "claim": "string — observable, falsifiable, provable from pixels",
       "navigationHint": "string | null — how to reach the state, plain language",
       "viewport": "desktop | mobile | tablet | null",
+      "source": "agent | contract | issue | human — provenance; defaults to `agent` for input claims and `contract` for claims loaded via `qa --contract`",
 
       // Optional v0 extensions (not in the original PRD schema, added so QA can
       // actually reach interactive states deterministically without an LLM
@@ -73,6 +75,14 @@ The intent/reasoning side. The agent populates this from its own session.
 must be falsifiable from pixels alone — that is what makes the LLM verdict (and a
 human's 90-second skim) trustworthy.
 
+**Independent claims (`--contract`):** the strongest receipts QA criteria that
+were authored *before/independently of* the implementation. Put them in their own
+JSON file — an array of criteria (same shape as above) or
+`{ "acceptanceCriteria": [...] }` — and run `receipts qa --contract claims.json`.
+Contract claims are tagged `source: "contract"`, merged over the agent's input
+claims by `id`, and the report flags any run where every claim was agent-authored
+as **self-graded**.
+
 `steps`/`path` are optional. Omit them and the runner just loads `targetUrl` and
 screenshots it. They exist so interactive acceptance criteria can be reached
 deterministically in v0; a future version may drive the browser from
@@ -100,16 +110,35 @@ deterministically in v0; a future version may drive the browser from
       "screenshots": {
         "before": "media/ac1-before.png | null",
         "after": "media/ac1-after.png"
+      },
+
+      // Optional, added with the frame-sequence + adversarial judging:
+      "frames": ["media/ac1-before.png", "media/ac1-step0.png", "media/ac1-after.png"],
+      // ^ chronological frames the judge actually saw (before → per-step → after).
+      "adversarial": {
+        // Present only when the primary verdict was `pass` and the adversarial
+        // pass ran. `refuted: true` downgrades the verdict to `inconclusive`.
+        "refuted": false,
+        "rationale": "string — what the skeptical second judge saw"
       }
     }
   ],
-  "summary": { "pass": 0, "fail": 0, "inconclusive": 0, "not_tested": 0 }
+  "summary": { "pass": 0, "fail": 0, "inconclusive": 0, "not_tested": 0 },
+
+  // Optional run-level notes surfaced in the report header:
+  "notes": ["All acceptance claims were authored by the agent (self-graded).", "trace.zip pruned (all claims passed)."]
 }
 ```
 
+**Adversarial pass:** every claim the primary judge marks `pass` is re-checked by
+a second judge prompted to *refute* it; a successful refutation downgrades
+`pass → inconclusive` (`reconcileVerdict`). Bound to passing claims only, so it
+costs at most one extra call per pass. Disable with `receipts qa --no-adversarial`.
+
 **Exit code of `receipts qa`:** `0` only when no claim is `fail` or
 `inconclusive`. `pass`/`not_tested`/reasoning-only all exit `0`; any
-`fail`/`inconclusive` exits non-zero so CI can gate.
+`fail`/`inconclusive` (including an adversarial downgrade) exits non-zero so CI
+can gate.
 
 ---
 
@@ -126,9 +155,23 @@ Superset combining `receipt-input.json` + `qa-results.json` + metadata.
   "repo": "string | null — https URL of origin remote",
   "commit": "string | null — HEAD sha",
   "input":  { /* full receipt-input.json */ },
-  "qa":     { /* full qa-results.json */ }
+  "qa":     { /* full qa-results.json */ },
+
+  // Tamper-evidence, added by `build`; checked by `receipts verify`.
+  "integrity": {
+    "algo": "sha256",
+    "manifestHash": "hex — sha256 of the canonical manifest with `integrity` removed",
+    "files": { "qa-results.json": "hex", "media/ac1-after.png": "hex" },
+    "signature": { "algo": "hmac-sha256", "value": "hex" }  // only when RECEIPTS_SIGNING_KEY was set
+  }
 }
 ```
+
+**Integrity:** `receipts verify --in .receipts/<id>` recomputes `manifestHash` and
+every file hash and exits non-zero if anything changed after build. Content hashes
+make edits *detectable*; an HMAC signature (`RECEIPTS_SIGNING_KEY`) makes a receipt
+*unforgeable* by anyone without the key. `index.html`, `manifest.json`, and
+`publish.json` are excluded (derived / self-referential / added post-build).
 
 `overallVerdict`:
 - `pass` — every claim passed.

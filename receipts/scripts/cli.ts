@@ -3,6 +3,8 @@ import { runQa } from "./qa";
 import { runBuild } from "./build";
 import { runOpen } from "./open";
 import { runPublish } from "./publish";
+import { runVerify } from "./verify";
+import { runDoctor } from "./doctor";
 import { runTokens } from "./tokens";
 import { runLogin, runLogout, runWhoami } from "./login";
 import { generatorVersion } from "./util";
@@ -12,8 +14,12 @@ Make a coding agent leave receipts: a recorded visual-QA walkthrough + the
 reasoning behind a PR, packaged as one self-contained artefact.
 
 Usage:
-  receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+  receipts qa      --input receipt-input.json [--url URL] [--start "CMD"]
+                   [--contract claims.json] [--no-judge] [--no-adversarial]
+                   [--max-judge-calls N] [--out DIR]
   receipts build   --in .receipts/<id>
+  receipts verify  --in .receipts/<id> [--key <K>]
+  receipts doctor                          (preflight: can this machine make a receipt?)
   receipts open    --in .receipts/<id>
   receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
   receipts login   --token <T> | --supabase-url <U> --supabase-key <K>
@@ -22,8 +28,11 @@ Usage:
   receipts --version | --help
 
 Env:
-  RECEIPTS_API_KEY       Anthropic API key for the vision judge (omit for visual-only).
-  RECEIPTS_MODEL         Judge model id (default: claude-sonnet-4-6).
+  RECEIPTS_API_KEY        Anthropic API key for the vision judge (omit for visual-only).
+  RECEIPTS_MODEL          Judge model id (default: claude-sonnet-4-6).
+  RECEIPTS_CHROMIUM_PATH  System Chrome/Chromium binary (fallback if the pinned build is absent).
+  RECEIPTS_MAX_JUDGE_CALLS  Cap on vision-model calls per run (cost ceiling; 0 = unlimited).
+  RECEIPTS_SIGNING_KEY    HMAC key — 'build' signs the receipt, 'verify' checks it.
 
   # publish — bring-your-own Supabase (service role; bypasses RLS):
   RECEIPTS_SUPABASE_URL  Your Supabase project URL.
@@ -51,6 +60,10 @@ async function main(): Promise<number> {
       return runQa(rest);
     case "build":
       return runBuild(rest);
+    case "verify":
+      return runVerify(rest);
+    case "doctor":
+      return runDoctor();
     case "open":
       return runOpen(rest);
     case "publish":

@@ -37,6 +37,9 @@ receipts/scripts/      # The CLI (TypeScript, run via tsx — NO build step)
   nav.ts               #   LLM-driven navigation from a plain-language navigationHint
   open.ts              #   `open`: open the report
   publish.ts           #   `publish`: upload to Supabase (BYO or hosted)
+  verify.ts            #   `verify`: recompute integrity hashes / HMAC — tamper check
+  doctor.ts            #   `doctor`: local preflight (Node, Chromium launches, API key)
+  integrity.ts         #   tamper-evidence: canonical hashing + HMAC (pure helpers)
   login.ts / tokens.ts #   `login/logout/whoami`; operator `tokens issue|revoke|list`
   credentials.ts       #   ~/.receipts/config.json store; env always overrides
   types.ts             #   DATA CONTRACTS — the spine; shared by qa/build/report
@@ -73,8 +76,10 @@ npm run demo:serve       # boot just the example app
 CLI surface (also `npx receipts <cmd>` once installed):
 
 ```
-receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--no-judge] [--out DIR]
+receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--contract claims.json] [--no-judge] [--no-adversarial] [--max-judge-calls N] [--out DIR]
 receipts build   --in .receipts/<id>
+receipts verify  --in .receipts/<id> [--key <K>]
+receipts doctor
 receipts open    --in .receipts/<id>
 receipts publish --in .receipts/<id> [--visibility unlisted|public] [--dry-run]
 receipts login   --token <T> | --supabase-url <U> --supabase-key <K>   ·   logout · whoami
@@ -125,6 +130,32 @@ Output folder:
   navigation**: `nav.ts` asks the model to plan `QaStep`s from the hint + a
   snapshot of interactive elements, validated against an allow-list (`MAX_STEPS`,
   `parseNavSteps` drops disallowed actions). Gated on `RECEIPTS_API_KEY`.
+
+### Judging (`judge.ts`)
+- The judge sees the **chronological frame sequence** per claim (before → per-step
+  → after, captured in `qa.ts` via the `onStep` hooks), not just before/after.
+- **Adversarial pass:** any `pass` is re-checked by a second judge prompted to
+  *refute* it; a refutation downgrades `pass → inconclusive` (`reconcileVerdict`,
+  pure + unit-tested). Bound to passing claims only (cost). `--no-adversarial`
+  disables it. Don't remove this without flagging — it's the counter to the
+  "agent grades its own homework" critique.
+
+### Provenance, integrity & cost (the "would a senior dev trust it?" layer)
+- **Claims as a contract:** `qa --contract claims.json` merges independently
+  authored criteria (tagged `source: contract`) over the agent's input claims
+  (`source: agent`). `mergeCriteria` is pure + unit-tested. The report shows a
+  per-claim provenance chip and flags a fully self-graded run.
+- **No wrong-screen passes:** if LLM nav ran fewer steps than planned, a `pass`
+  is downgraded to `inconclusive` (`qa.ts`).
+- **Cost ceiling:** `--max-judge-calls` / `RECEIPTS_MAX_JUDGE_CALLS` caps
+  vision-model calls; remaining claims degrade to `not_tested` with a note.
+- **Trace-on-failure-only:** a clean run prunes `trace.zip`.
+- **Tamper-evidence (`integrity.ts` + `build` + `verify`):** `build` writes an
+  `integrity` block to the manifest — sha256 of the canonical manifest data +
+  every evidence file (excluding `index.html`/`manifest.json`/`publish.json`),
+  optionally HMAC-signed with `RECEIPTS_SIGNING_KEY`. `receipts verify`
+  recomputes and exits non-zero on any edit. Keep the EXCLUDE set and the
+  signature payload stable, or you'll break verification of existing receipts.
 
 ### Verdicts & exit codes (CI gate)
 - `qa` exits **non-zero** if any claim **fails or is inconclusive**.
@@ -177,6 +208,9 @@ Output folder:
 |---|---|
 | `RECEIPTS_API_KEY` | Anthropic key for the vision judge + LLM nav. Omit → visual-only. |
 | `RECEIPTS_MODEL` | Judge/nav model id (default `claude-sonnet-4-6`). |
+| `RECEIPTS_CHROMIUM_PATH` | System Chrome/Chromium binary; fallback when the pinned Playwright build isn't installed. |
+| `RECEIPTS_MAX_JUDGE_CALLS` | Cost ceiling: max vision-model calls per run (0/unset = unlimited). |
+| `RECEIPTS_SIGNING_KEY` | HMAC key — `build` signs the receipt, `verify` checks it. |
 | `RECEIPTS_SUPABASE_URL` / `RECEIPTS_SUPABASE_KEY` | Publish (BYO): project URL + service-role key. |
 | `RECEIPTS_TOKEN` / `RECEIPTS_INGEST_URL` | Publish (hosted): upload token + ingest endpoint. |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Web app only (anon, RLS-protected). |
@@ -198,8 +232,16 @@ Full setup + ingest protocol: `docs/hosting.md`.
 
 `__tests__/unit.test.ts` (vitest, node env) covers **pure, exported functions**
 only — `parseNavSteps`, `buildNavPrompt`, `selectMode`, `resolveCredentials`,
-`receiptId`, `sha256Hex`. No browser/network in unit tests. When you add a pure
-helper to the pipeline, export it and add a case here. Run `npm test`.
+`receiptId`, `sha256Hex`, `reconcileVerdict`, `sampleFrames`, `mergeCriteria`,
+`canonicalize`, `hmacSha256Hex`, `computeManifestHash`, `signaturePayload`. No
+browser/network in unit tests. When you add a pure helper to the pipeline, export
+it and add a case here.
+
+`__tests__/e2e.test.ts` is the **golden integration test**: it boots the demo,
+runs the real `qa → build → verify` in a browser, and asserts the manifest,
+verdict, frames, integrity, and tamper-detection. It **self-skips when no browser
+can launch** (so plain `npm test` passes locally); `.github/workflows/ci.yml`
+installs Chromium and runs it on every PR. Run `npm test`.
 
 ## Working agreements
 

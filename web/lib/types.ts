@@ -25,6 +25,12 @@ export interface QaResult {
   claim?: string;
   verdict?: QaResultVerdict;
   rationale?: string;
+  /** Chronological frames the judge saw (before → per-step → after). */
+  frames?: string[];
+  /** Adversarial re-check of a claimed pass; `refuted` downgrades it. */
+  adversarial?: { refuted: boolean; rationale: string } | null;
+  /** Provenance: `agent` (self-graded) vs `contract`/`issue`/`human` (independent). */
+  source?: "agent" | "contract" | "issue" | "human";
   [key: string]: unknown;
 }
 
@@ -33,7 +39,17 @@ export interface ManifestQa {
   results?: QaResult[];
   reasoningOnly?: boolean;
   videoPath?: string;
+  /** Run-level notes (self-grading warning, judge budget, trace pruned). */
+  notes?: string[];
   [key: string]: unknown;
+}
+
+/** Tamper-evidence block written by `receipts build` / checked by `receipts verify`. */
+export interface Integrity {
+  algo?: string;
+  manifestHash?: string;
+  files?: Record<string, string>;
+  signature?: { algo: string; value: string } | null;
 }
 
 export interface ManifestInput {
@@ -58,6 +74,7 @@ export interface Manifest {
   commit?: string;
   input?: ManifestInput;
   qa?: ManifestQa;
+  integrity?: Integrity;
   [key: string]: unknown;
 }
 
