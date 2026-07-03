@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatorVersion": "receipts@0.1.0",
-  "generatedAt": "2026-07-03T21:12:25.468Z",
+  "generatedAt": "2026-07-03T21:21:01.602Z",
   "overallVerdict": "visual-only",
   "repo": "http://local_proxy@127.0.0.1:41729/git/fathyshalaby/receipts.dev",
-  "commit": "1a6c98da24b5bcb48bccbf6751c41edfd57e1e1b",
+  "commit": "daf7eab27892fa6fbb33497116c8c790d8c1def8",
   "input": {
     "schemaVersion": "1",
     "task": "Make the marketing landing page more responsive and add entrance/scroll animations",
@@ -174,7 +174,7 @@
   },
   "integrity": {
     "algo": "sha256",
-    "manifestHash": "459bc9db557fe4bad5547822d29e30cabf1e397fe7c506eec2d8ef2c909949b1",
+    "manifestHash": "e8df57989e8508cba80fb0a0d033d4543a80d0c90e9ccc4d26b455698b483107",
     "files": {
       "media/ac1-after.png": "c8cda68a6ede504e5207f22e3e4a77290a98ff2162197bbf7f2b5380c4eb6b99",
       "media/ac1-before.png": "0edfed8ccb7422e9c6ef09f2aef0ffe6329bcf28ff06727af85395354a7b877b",
@@ -186,6 +186,8 @@
       "media/ac3-before.png": "b0d7f9a2d3c515af499d448ff1188459aa581afb611fada2c8948279a0b43f47",
       "media/ac3-step0.png": "f8233440a0e706406247556e681e00ea6380a86d7cea19a683ee898ceec37fe2",
       "media/ac3-step1.png": "f4df41ab9e6b71da99f7158f6da3317840aac64e44c8e6cf1e2265d973f63361",
+      "media/session.gif": "92e9e5f5e4d255b8af13107395d5fe9ed2a1361ba14bc80d82e25b07a9022d61",
+      "media/session.mp4": "e15179c79fd4a028de937bee570f46163a79774e86fd72d31a6c0e5a9a80088f",
       "media/session.webm": "b3cf33dd7595ed21a36019d54afaeafed3c2af4f9223fa082d39d92eceab055d",
       "qa-results.json": "d8f6ee4f2f6234bbc6b52b2eeec5276bb2018515482a428cc618020da9e5877c",
       "receipt-input.json": "ad8d92ef63ecbcbd31a202b64191a361f3644987d4e16cf21fcd2e57770c51d0"
