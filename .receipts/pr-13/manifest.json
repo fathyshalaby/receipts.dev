@@ -1,15 +1,15 @@
 {
   "schemaVersion": "1",
   "generatorVersion": "receipts@0.1.0",
-  "generatedAt": "2026-07-03T20:33:43.614Z",
+  "generatedAt": "2026-07-03T21:12:25.468Z",
   "overallVerdict": "visual-only",
   "repo": "http://local_proxy@127.0.0.1:41729/git/fathyshalaby/receipts.dev",
-  "commit": "b2abc50a035882be568c73bd821d852d88e6baad",
+  "commit": "1a6c98da24b5bcb48bccbf6751c41edfd57e1e1b",
   "input": {
     "schemaVersion": "1",
     "task": "Make the marketing landing page more responsive and add entrance/scroll animations",
     "branch": "claude/landing-page-responsive-animations-2f4u1z",
-    "prNumber": null,
+    "prNumber": 13,
     "targetUrl": "http://localhost:3000",
     "startCommand": "npm --prefix web run dev",
     "acceptanceCriteria": [
@@ -91,8 +91,8 @@
   },
   "qa": {
     "schemaVersion": "1",
-    "startedAt": "2026-07-03T20:33:21.812Z",
-    "durationMs": 15842,
+    "startedAt": "2026-07-03T21:11:52.412Z",
+    "durationMs": 17490,
     "videoPath": "media/session.webm",
     "tracePath": null,
     "reasoningOnly": false,
@@ -174,21 +174,21 @@
   },
   "integrity": {
     "algo": "sha256",
-    "manifestHash": "99455e5088cb31d0f4ca312b54498e0e542627bba277a16cfd20cd4331a37576",
+    "manifestHash": "459bc9db557fe4bad5547822d29e30cabf1e397fe7c506eec2d8ef2c909949b1",
     "files": {
-      "media/ac1-after.png": "960c58ac1e89a76d5c36341e7b7a34bafbbd4b55b3c0e6c922915f4653e83ee2",
-      "media/ac1-before.png": "e8328dc829ec0148fae31d0de5f7adbe705f498707492ec38ed86f4388941fc0",
-      "media/ac1-step0.png": "c8cda68a6ede504e5207f22e3e4a77290a98ff2162197bbf7f2b5380c4eb6b99",
-      "media/ac2-after.png": "73f7a45ed44e34858763e8732fbb1fe5106a0aa94f60dda154d96df7c5284bff",
-      "media/ac2-before.png": "88f717ae2345d51c45688b458baac59ea7f83a12ff8f1f532e4a39a87ca1bfc2",
-      "media/ac2-step0.png": "8086756b2d446845abfe23eb81ec3b3aa30af5ea4ba4e400e5e77736de907c8e",
-      "media/ac3-after.png": "d19bbc00b8b5ab8dec9322be88126a29ffd3e0222c85d3d1695b0cb6e9d4f837",
-      "media/ac3-before.png": "13a49109696b95f3f2416a217d9228e047287c7af8f4f7ee50130a0ae9f282d2",
-      "media/ac3-step0.png": "8bcc8be740c39874021646c7ebf4137fa28a936349cf2141ced3ab80abe4d8cd",
-      "media/ac3-step1.png": "1198b8998b2c6a803e6f285dd25297ed10ac725a507b84eb3bd6cd7263793a8c",
-      "media/session.webm": "bcd24120beb7964b444375ec6b4799653ca0104ff4cffd24d814d476a5df2df1",
-      "qa-results.json": "5155d7be26d55e684919ad9dbb9ffbf68ce84e6fc8dacb6e72b61f6ec6101b2d",
-      "receipt-input.json": "aa07e47aef5c37ee33431a01aa1b633e1c1ae1ad7dcb947e103eb121dce546eb"
+      "media/ac1-after.png": "c8cda68a6ede504e5207f22e3e4a77290a98ff2162197bbf7f2b5380c4eb6b99",
+      "media/ac1-before.png": "0edfed8ccb7422e9c6ef09f2aef0ffe6329bcf28ff06727af85395354a7b877b",
+      "media/ac1-step0.png": "ee032b65076296b671bac3c50c6b66dcefff6442f8a4f5c6466ee3eb67e5918b",
+      "media/ac2-after.png": "43bbc1f81327964c9bd510023a54f4be96e99266a9a68201887f41a9c09e3653",
+      "media/ac2-before.png": "dc903a024730152f87c33fbe8cb0860cdff1b9926b11eb20bb851b730b436888",
+      "media/ac2-step0.png": "cad722e8ea513a7568993261737c5f2bbd0d796068c81857fc8ae943ab96fdae",
+      "media/ac3-after.png": "971bed2d5b1d91b14209ed76d5105ffc91611324474d8d902458cc9096f0206f",
+      "media/ac3-before.png": "b0d7f9a2d3c515af499d448ff1188459aa581afb611fada2c8948279a0b43f47",
+      "media/ac3-step0.png": "f8233440a0e706406247556e681e00ea6380a86d7cea19a683ee898ceec37fe2",
+      "media/ac3-step1.png": "f4df41ab9e6b71da99f7158f6da3317840aac64e44c8e6cf1e2265d973f63361",
+      "media/session.webm": "b3cf33dd7595ed21a36019d54afaeafed3c2af4f9223fa082d39d92eceab055d",
+      "qa-results.json": "d8f6ee4f2f6234bbc6b52b2eeec5276bb2018515482a428cc618020da9e5877c",
+      "receipt-input.json": "ad8d92ef63ecbcbd31a202b64191a361f3644987d4e16cf21fcd2e57770c51d0"
     },
     "signature": null
   }

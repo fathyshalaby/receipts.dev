@@ -2,7 +2,7 @@
   "schemaVersion": "1",
   "task": "Make the marketing landing page more responsive and add entrance/scroll animations",
   "branch": "claude/landing-page-responsive-animations-2f4u1z",
-  "prNumber": null,
+  "prNumber": 13,
   "targetUrl": "http://localhost:3000",
   "startCommand": "npm --prefix web run dev",
   "acceptanceCriteria": [
