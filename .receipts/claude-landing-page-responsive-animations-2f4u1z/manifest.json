@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "1",
+  "generatorVersion": "receipts@0.1.0",
+  "generatedAt": "2026-07-03T20:33:43.614Z",
+  "overallVerdict": "visual-only",
+  "repo": "http://local_proxy@127.0.0.1:41729/git/fathyshalaby/receipts.dev",
+  "commit": "b2abc50a035882be568c73bd821d852d88e6baad",
+  "input": {
+    "schemaVersion": "1",
+    "task": "Make the marketing landing page more responsive and add entrance/scroll animations",
+    "branch": "claude/landing-page-responsive-animations-2f4u1z",
+    "prNumber": null,
+    "targetUrl": "http://localhost:3000",
+    "startCommand": "npm --prefix web run dev",
+    "acceptanceCriteria": [
+      {
+        "id": "ac1",
+        "claim": "On page load, the hero eyebrow badge, heading, subtitle, and CTA buttons fade and slide upward into view in a staggered sequence, ending fully visible and legible",
+        "navigationHint": "open the landing page root and let the hero finish its entrance animation",
+        "viewport": "desktop",
+        "path": "/",
+        "steps": [
+          {
+            "action": "wait",
+            "value": 900
+          }
+        ]
+      },
+      {
+        "id": "ac2",
+        "claim": "On a 375px-wide mobile viewport, the hero's two call-to-action buttons ('Get started' and 'See a receipt') stack vertically as full-width buttons with no horizontal overflow or clipped text",
+        "navigationHint": "open the landing page root on a narrow mobile viewport",
+        "viewport": "mobile",
+        "path": "/",
+        "steps": [
+          {
+            "action": "wait",
+            "value": 500
+          }
+        ]
+      },
+      {
+        "id": "ac3",
+        "claim": "Scrolling to the 'What's in a receipt' section reveals the six feature cards cascading into view one after another (staggered), rather than all appearing at once",
+        "navigationHint": "click the 'What's in a receipt' nav link and watch the feature grid animate in",
+        "viewport": "desktop",
+        "path": "/",
+        "steps": [
+          {
+            "action": "click",
+            "selector": "a[href='#receipt']"
+          },
+          {
+            "action": "wait",
+            "value": 1200
+          }
+        ]
+      }
+    ],
+    "plan": "Add a CSS-only staggered entrance animation to the hero (eyebrow/h1/subtitle/cta/meta/mock) using animation-delay per element, add a pulsing glow to the eyebrow status dot, and extend the existing IntersectionObserver-driven `.reveal` mechanism so multi-card sections (feature grid, steps, contrast cards) cascade child-by-child via nth-child transition-delay instead of fading in as one block. Separately, add a `max-width: 480px` breakpoint so the hero CTA buttons stack full-width on narrow phones instead of center-wrapping unevenly, and simplify the receipt-mockup claim rows (hide the small screenshot swatch) so they don't feel cramped at that width.",
+    "decisions": [
+      "Implemented the stagger with CSS transition-delay on child selectors instead of a second JS timer/observer, so RevealOnScroll.tsx stays untouched and the effect degrades safely if JS is slow to hydrate",
+      "Used a dedicated max-width: 480px breakpoint rather than widening the existing 820px/860px breakpoints, so the tablet layout (which already works) is untouched and only the tightest phone widths change",
+      "Kept all new animation under the existing prefers-reduced-motion guard so users who disable motion still get the fully visible, static layout instantly"
+    ],
+    "rejectedAlternatives": [
+      "A JS-driven stagger (setTimeout per card) — rejected in favor of declarative CSS transition-delay, which is simpler and keeps working even before hydration finishes",
+      "Continuous parallax/tilt hover effects on the hero mockup — rejected as unnecessary motion for a marketing page and harder to reconcile with prefers-reduced-motion",
+      "A hamburger mobile nav menu — out of scope for this pass; the nav already collapses to a single CTA under 860px and wasn't the reported pain point"
+    ],
+    "promptLog": [
+      {
+        "role": "user",
+        "text": "Update the landing page to be a little more responsive and add some animations, and use it as an example receipt.",
+        "ts": null
+      },
+      {
+        "role": "assistant",
+        "text": "Adding a staggered CSS entrance animation to the hero, a cascading reveal for the feature/steps/contrast cards, and a sub-480px breakpoint that stacks the hero CTA buttons full-width on narrow phones — then running receipts qa/build against three falsifiable, screenshot-provable claims.",
+        "ts": null
+      }
+    ],
+    "filesChanged": [
+      {
+        "path": "web/app/landing.css",
+        "additions": 118,
+        "deletions": 1,
+        "area": "web/landing"
+      }
+    ]
+  },
+  "qa": {
+    "schemaVersion": "1",
+    "startedAt": "2026-07-03T20:33:21.812Z",
+    "durationMs": 15842,
+    "videoPath": "media/session.webm",
+    "tracePath": null,
+    "reasoningOnly": false,
+    "results": [
+      {
+        "acId": "ac1",
+        "claim": "On page load, the hero eyebrow badge, heading, subtitle, and CTA buttons fade and slide upward into view in a staggered sequence, ending fully visible and legible",
+        "verdict": "not_tested",
+        "judge": "none",
+        "rationale": null,
+        "screenshots": {
+          "before": "media/ac1-before.png",
+          "after": "media/ac1-after.png"
+        },
+        "frames": [
+          "media/ac1-before.png",
+          "media/ac1-step0.png",
+          "media/ac1-after.png"
+        ],
+        "adversarial": null,
+        "source": "agent",
+        "nav": {
+          "mode": "deterministic"
+        }
+      },
+      {
+        "acId": "ac2",
+        "claim": "On a 375px-wide mobile viewport, the hero's two call-to-action buttons ('Get started' and 'See a receipt') stack vertically as full-width buttons with no horizontal overflow or clipped text",
+        "verdict": "not_tested",
+        "judge": "none",
+        "rationale": null,
+        "screenshots": {
+          "before": "media/ac2-before.png",
+          "after": "media/ac2-after.png"
+        },
+        "frames": [
+          "media/ac2-before.png",
+          "media/ac2-step0.png",
+          "media/ac2-after.png"
+        ],
+        "adversarial": null,
+        "source": "agent",
+        "nav": {
+          "mode": "deterministic"
+        }
+      },
+      {
+        "acId": "ac3",
+        "claim": "Scrolling to the 'What's in a receipt' section reveals the six feature cards cascading into view one after another (staggered), rather than all appearing at once",
+        "verdict": "not_tested",
+        "judge": "none",
+        "rationale": null,
+        "screenshots": {
+          "before": "media/ac3-before.png",
+          "after": "media/ac3-after.png"
+        },
+        "frames": [
+          "media/ac3-before.png",
+          "media/ac3-step0.png",
+          "media/ac3-step1.png",
+          "media/ac3-after.png"
+        ],
+        "adversarial": null,
+        "source": "agent",
+        "nav": {
+          "mode": "deterministic"
+        }
+      }
+    ],
+    "summary": {
+      "pass": 0,
+      "fail": 0,
+      "inconclusive": 0,
+      "not_tested": 3
+    },
+    "notes": [
+      "trace.zip pruned (all claims passed; the trace is kept only on failure)."
+    ]
+  },
+  "integrity": {
+    "algo": "sha256",
+    "manifestHash": "99455e5088cb31d0f4ca312b54498e0e542627bba277a16cfd20cd4331a37576",
+    "files": {
+      "media/ac1-after.png": "960c58ac1e89a76d5c36341e7b7a34bafbbd4b55b3c0e6c922915f4653e83ee2",
+      "media/ac1-before.png": "e8328dc829ec0148fae31d0de5f7adbe705f498707492ec38ed86f4388941fc0",
+      "media/ac1-step0.png": "c8cda68a6ede504e5207f22e3e4a77290a98ff2162197bbf7f2b5380c4eb6b99",
+      "media/ac2-after.png": "73f7a45ed44e34858763e8732fbb1fe5106a0aa94f60dda154d96df7c5284bff",
+      "media/ac2-before.png": "88f717ae2345d51c45688b458baac59ea7f83a12ff8f1f532e4a39a87ca1bfc2",
+      "media/ac2-step0.png": "8086756b2d446845abfe23eb81ec3b3aa30af5ea4ba4e400e5e77736de907c8e",
+      "media/ac3-after.png": "d19bbc00b8b5ab8dec9322be88126a29ffd3e0222c85d3d1695b0cb6e9d4f837",
+      "media/ac3-before.png": "13a49109696b95f3f2416a217d9228e047287c7af8f4f7ee50130a0ae9f282d2",
+      "media/ac3-step0.png": "8bcc8be740c39874021646c7ebf4137fa28a936349cf2141ced3ab80abe4d8cd",
+      "media/ac3-step1.png": "1198b8998b2c6a803e6f285dd25297ed10ac725a507b84eb3bd6cd7263793a8c",
+      "media/session.webm": "bcd24120beb7964b444375ec6b4799653ca0104ff4cffd24d814d476a5df2df1",
+      "qa-results.json": "5155d7be26d55e684919ad9dbb9ffbf68ce84e6fc8dacb6e72b61f6ec6101b2d",
+      "receipt-input.json": "aa07e47aef5c37ee33431a01aa1b633e1c1ae1ad7dcb947e103eb121dce546eb"
+    },
+    "signature": null
+  }
+}

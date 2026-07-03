@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1",
+  "task": "Make the marketing landing page more responsive and add entrance/scroll animations",
+  "branch": "claude/landing-page-responsive-animations-2f4u1z",
+  "prNumber": null,
+  "targetUrl": "http://localhost:3000",
+  "startCommand": "npm --prefix web run dev",
+  "acceptanceCriteria": [
+    {
+      "id": "ac1",
+      "claim": "On page load, the hero eyebrow badge, heading, subtitle, and CTA buttons fade and slide upward into view in a staggered sequence, ending fully visible and legible",
+      "navigationHint": "open the landing page root and let the hero finish its entrance animation",
+      "viewport": "desktop",
+      "path": "/",
+      "steps": [
+        {
+          "action": "wait",
+          "value": 900
+        }
+      ]
+    },
+    {
+      "id": "ac2",
+      "claim": "On a 375px-wide mobile viewport, the hero's two call-to-action buttons ('Get started' and 'See a receipt') stack vertically as full-width buttons with no horizontal overflow or clipped text",
+      "navigationHint": "open the landing page root on a narrow mobile viewport",
+      "viewport": "mobile",
+      "path": "/",
+      "steps": [
+        {
+          "action": "wait",
+          "value": 500
+        }
+      ]
+    },
+    {
+      "id": "ac3",
+      "claim": "Scrolling to the 'What's in a receipt' section reveals the six feature cards cascading into view one after another (staggered), rather than all appearing at once",
+      "navigationHint": "click the 'What's in a receipt' nav link and watch the feature grid animate in",
+      "viewport": "desktop",
+      "path": "/",
+      "steps": [
+        {
+          "action": "click",
+          "selector": "a[href='#receipt']"
+        },
+        {
+          "action": "wait",
+          "value": 1200
+        }
+      ]
+    }
+  ],
+  "plan": "Add a CSS-only staggered entrance animation to the hero (eyebrow/h1/subtitle/cta/meta/mock) using animation-delay per element, add a pulsing glow to the eyebrow status dot, and extend the existing IntersectionObserver-driven `.reveal` mechanism so multi-card sections (feature grid, steps, contrast cards) cascade child-by-child via nth-child transition-delay instead of fading in as one block. Separately, add a `max-width: 480px` breakpoint so the hero CTA buttons stack full-width on narrow phones instead of center-wrapping unevenly, and simplify the receipt-mockup claim rows (hide the small screenshot swatch) so they don't feel cramped at that width.",
+  "decisions": [
+    "Implemented the stagger with CSS transition-delay on child selectors instead of a second JS timer/observer, so RevealOnScroll.tsx stays untouched and the effect degrades safely if JS is slow to hydrate",
+    "Used a dedicated max-width: 480px breakpoint rather than widening the existing 820px/860px breakpoints, so the tablet layout (which already works) is untouched and only the tightest phone widths change",
+    "Kept all new animation under the existing prefers-reduced-motion guard so users who disable motion still get the fully visible, static layout instantly"
+  ],
+  "rejectedAlternatives": [
+    "A JS-driven stagger (setTimeout per card) — rejected in favor of declarative CSS transition-delay, which is simpler and keeps working even before hydration finishes",
+    "Continuous parallax/tilt hover effects on the hero mockup — rejected as unnecessary motion for a marketing page and harder to reconcile with prefers-reduced-motion",
+    "A hamburger mobile nav menu — out of scope for this pass; the nav already collapses to a single CTA under 860px and wasn't the reported pain point"
+  ],
+  "promptLog": [
+    {
+      "role": "user",
+      "text": "Update the landing page to be a little more responsive and add some animations, and use it as an example receipt.",
+      "ts": null
+    },
+    {
+      "role": "assistant",
+      "text": "Adding a staggered CSS entrance animation to the hero, a cascading reveal for the feature/steps/contrast cards, and a sub-480px breakpoint that stacks the hero CTA buttons full-width on narrow phones — then running receipts qa/build against three falsifiable, screenshot-provable claims.",
+      "ts": null
+    }
+  ],
+  "filesChanged": [
+    {
+      "path": "web/app/landing.css",
+      "additions": 118,
+      "deletions": 1,
+      "area": "web/landing"
+    }
+  ]
+}
