@@ -172,6 +172,15 @@ media by raw URL — but be deliberate about what actually renders inline:
   reasoning) if you don't have one configured, same as this repo's own demo
   PRs do.
 
+This repo's own `.github/workflows/receipts.yml` automates exactly this: when
+no Supabase target is configured, its `Generate inline preview` step does the
+GIF transcode, force-commits the receipt back onto the PR branch (message
+tagged `[skip ci]` so it doesn't retrigger the workflow), and the `Comment on
+PR` step reads `manifest.json` to embed the GIF + every claim's before/after
+inline automatically. Needs `permissions: contents: write`; only works for
+same-repo PRs (`GITHUB_TOKEN` can't push to a fork's branch) — falls back to
+the plain artefact-download comment if the push fails.
+
 ## Graceful degradation
 
 - **No acceptance criteria / no `targetUrl`** (e.g. a backend-only PR): QA is
