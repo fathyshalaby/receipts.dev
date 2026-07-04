@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatorVersion": "receipts@0.1.0",
-  "generatedAt": "2026-07-04T14:51:00.475Z",
+  "generatedAt": "2026-07-04T14:53:49.915Z",
   "overallVerdict": "visual-only",
-  "repo": "http://local_proxy@127.0.0.1:41729/git/fathyshalaby/receipts.dev",
-  "commit": "9dde112ae1d506482ecd46b312bb4e3d41e89692",
+  "repo": "https://github.com/fathyshalaby/receipts.dev",
+  "commit": "833badfa9bc1a2f8b579c9f85e69409f3b62bc4f",
   "input": {
     "schemaVersion": "1",
     "task": "Add visible keyboard-focus indicators to the landing page",
@@ -86,8 +86,8 @@
   },
   "qa": {
     "schemaVersion": "1",
-    "startedAt": "2026-07-04T14:50:43.426Z",
-    "durationMs": 8951,
+    "startedAt": "2026-07-04T14:53:23.488Z",
+    "durationMs": 8728,
     "videoPath": "media/session.webm",
     "tracePath": null,
     "reasoningOnly": false,
@@ -129,16 +129,17 @@
   },
   "integrity": {
     "algo": "sha256",
-    "manifestHash": "5b349dfea1d4c5f4569b8783f8e59daf3407bbafb6371eb7ce45c95c275115c3",
+    "manifestHash": "bad83827674bf2e916e62fb59f13a7f2fa5e7e9fdc34f1d5d389a49c9b626f62",
     "files": {
-      "media/ac1-after.png": "2b2f0f320b085eb24e1c535859fcaa661b0d205785908e87b9dfb4399154f2b9",
-      "media/ac1-before.png": "ee032b65076296b671bac3c50c6b66dcefff6442f8a4f5c6466ee3eb67e5918b",
-      "media/ac1-step0.png": "753c795e1ffc840f52a562a9f12e428e8d43421ec5046a7f616e431e6d8c50d2",
-      "media/ac1-step1.png": "d824cb75e15265291581b1c0fd71be08e09dceeb9689b7d65a6eee34f12e64ea",
-      "media/ac1-step2.png": "413a6ef6c523e6cf3c7423cf0b477df4dcce12bb32086ed01721255281404b2c",
-      "media/ac1-step3.png": "9d09f817377c29ac28a4198f00ed35758634a582ec6e551f77e5e1f96e79e199",
-      "media/session.webm": "51e057b6a7c1cc492f0a4a9a099bd936a4876fcf7ed4d87f5383fb907171ea50",
-      "qa-results.json": "3d792b11edf07caf6601dc6845167b6f8c00eb806c93befe2a80fedfe50aa83a",
+      "media/ac1-after.png": "edbd5d769e0c6808123e1edd9ba2c2818f516c92dd78c7e00c15e44fb657c07e",
+      "media/ac1-before.png": "54b0c2529e9c96afff79c466a11bfaecceb9587594313e5fb22732d88f7eeb7b",
+      "media/ac1-step0.png": "418414961dd424ab51d0a2e09ad2b70c20c44d1eaaa5326fe0b29f4fbc80f943",
+      "media/ac1-step1.png": "467e03d05d18bb871766209207df03a721d43f16eb4f0b30f2f63b28205f3551",
+      "media/ac1-step2.png": "973323a71a5ffe813a602a14de310d039a37c14c5d82840bc8a6e4af07fa84eb",
+      "media/ac1-step3.png": "433e738c1e976324a48b5e19f3b566540436a5d12323a93b5cb119830b26c91f",
+      "media/session.gif": "ab2040134ef78542e62eedf1a4b253876a8963a410e89edc871d229c5361dbc5",
+      "media/session.webm": "3e390a5eb8a2c195e38652b4b39bd500511d4a632a2d8967d40960ec2304219a",
+      "qa-results.json": "51e0747dac50d2d1f622164f341f098d8e0f62d76b98c0e6720e9137632dba8c",
       "receipt-input.json": "874b235a2e493534a630f406b59bacfb98bb2c2a42d24be222e82e6739f1e3b2"
     },
     "signature": null
