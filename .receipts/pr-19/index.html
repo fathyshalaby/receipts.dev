@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipt — Harden the receipts CI workflow: add a job timeout and remove the stale root rec</title>
+<style>/* Receipts report — inlined into index.html at build time. Dark, dense, scannable. */
+:root {
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #1a1f26;
+  --border: #262d36;
+  --fg: #e6e9ee;
+  --muted: #8b95a3;
+  --accent: #6ea8fe;
+  --pass: #2ecc71;
+  --fail: #ff5c5c;
+  --warn: #ffb454;
+  --idle: #7a8696;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+body {
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+.muted { color: var(--muted); }
+
+/* Header */
+.hd { margin-bottom: 22px; }
+.hd__top { display: flex; align-items: center; justify-content: space-between; }
+.hd__brand { font-weight: 800; letter-spacing: -0.02em; font-size: 18px; }
+.hd__dot { color: var(--accent); }
+.hd__task {
+  font-size: 26px; line-height: 1.2; margin: 14px 0 10px; letter-spacing: -0.02em;
+  font-family: "Source Serif 4", Georgia, serif;
+}
+.hd__meta { display: flex; flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: 13px; }
+.hd__meta b { color: var(--fg); font-weight: 600; }
+.hd__note {
+  margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border);
+  border-left: 3px solid var(--warn); background: var(--panel); border-radius: 6px;
+  color: var(--muted);
+}
+
+/* Cards */
+.card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 18px 18px 16px; margin: 16px 0;
+}
+.sec { margin: 0 0 14px; font-size: 15px; letter-spacing: 0.01em; }
+.card h3 { margin: 16px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.card ul { margin: 6px 0; padding-left: 18px; }
+.card li { margin: 4px 0; }
+
+/* Video */
+.video { width: 100%; border-radius: 8px; background: #000; display: block; }
+
+/* Badges */
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 3px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap;
+}
+.badge--pass { color: var(--pass); border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.08); }
+.badge--fail { color: var(--fail); border-color: rgba(255,92,92,.4); background: rgba(255,92,92,.08); }
+.badge--inconclusive { color: var(--warn); border-color: rgba(255,180,84,.4); background: rgba(255,180,84,.08); }
+.badge--not_tested, .badge--visual-only { color: var(--idle); }
+.badge--reasoning-only { color: var(--accent); border-color: rgba(110,168,254,.4); background: rgba(110,168,254,.08); }
+
+/* Summary row */
+.summary { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; font-size: 13px; color: var(--muted); }
+
+/* Claims */
+.claim { border-top: 1px solid var(--border); padding: 16px 0; }
+.claim:first-of-type { border-top: 0; }
+.claim__hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.claim__id { font-family: ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); font-size: 12px; }
+.claim__text { font-weight: 600; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.shots figure { margin: 0; }
+.shots figcaption { font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.shots img { width: 100%; border: 1px solid var(--border); border-radius: 8px; display: block; }
+@media (max-width: 640px) { .shots { grid-template-columns: 1fr; } }
+
+/* Collapsibles */
+.why { margin-top: 12px; }
+.why summary { cursor: pointer; color: var(--accent); font-size: 13px; user-select: none; }
+.why p { margin: 8px 0 0; color: var(--fg); }
+.why[open] summary { margin-bottom: 4px; }
+
+/* Prompt log */
+.log { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.log__row { display: grid; grid-template-columns: 84px 1fr; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); }
+.log__role { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.log__row--assistant .log__role { color: var(--accent); }
+.log__text { white-space: pre-wrap; }
+
+/* Files */
+.area { margin: 10px 0; }
+.files { width: 100%; border-collapse: collapse; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+.files td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.files__path { width: 100%; }
+.files__add { color: var(--pass); text-align: right; white-space: nowrap; }
+.files__del { color: var(--fail); text-align: right; white-space: nowrap; }
+
+/* Footer */
+.ft { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
+  margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+
+.navnote { margin: 4px 0 8px; font-size: 13px; color: #5ed6e8; font-weight: 600; }
+
+/* Adversarial check note */
+.adv { margin: 4px 0 8px; font-size: 13px; font-weight: 600; }
+.adv--refuted { color: var(--warn); }
+.adv--ok { color: var(--pass); }
+
+/* Intermediate interaction frames (the trajectory the judge saw) */
+.frames { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.frames__label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.frames img { height: 64px; width: auto; border: 1px solid var(--border); border-radius: 6px; display: block; }
+
+/* Claim provenance chip */
+.src {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); margin-left: auto;
+  color: var(--muted); white-space: nowrap;
+}
+.src--agent { color: var(--warn); border-color: rgba(255,180,84,.4); background: rgba(255,180,84,.07); }
+.src--contract, .src--issue, .src--human { color: var(--pass); border-color: rgba(46,204,113,.4); background: rgba(46,204,113,.07); }
+
+/* Run-level notes (self-grading warning, budget, trace pruned) */
+.notes { margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; }
+.note {
+  margin: 0; padding: 8px 12px; border: 1px solid var(--border); border-left: 3px solid var(--warn);
+  background: var(--panel-2); border-radius: 6px; color: var(--muted); font-size: 13px;
+}
+
+/* Integrity footer chip */
+.intg { color: var(--muted); }
+.intg code { color: var(--fg); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header class="hd">
+    <div class="hd__top">
+      <div class="hd__brand">Receipts<span class="hd__dot">.</span></div>
+      <span class="badge badge--reasoning-only">REASONING ONLY</span>
+    </div>
+    <h1 class="hd__task">Harden the receipts CI workflow: add a job timeout and remove the stale root receipt-input.json left over from a previous PR</h1>
+    <div class="hd__meta">
+      <span><b>branch</b> claude/receipts-ci-hardening</span>
+      <span><b>PR</b> #19</span>
+      <span><b>commit</b> <a href="https://github.com/fathyshalaby/receipts.dev/commit/827635dbfeece7f8a3debb8b7cd766c472154784">827635dbfe</a></span>
+      <span><b>generated</b> 2026-07-04T12:08:45.958Z</span>
+    </div>
+    <p class="hd__note">No visual QA ran for this change (no acceptance criteria or no target URL). This is a reasoning-only receipt.</p>
+  </header>
+
+  <section class="card">
+    <h2 class="sec">▶ Watch the work</h2>
+    <p class="muted">No session recording available for this receipt.</p>
+  </section>
+
+
+  <section class="card">
+    <h2 class="sec">How the agent thought</h2>
+    <h3>Plan</h3><p>No visual surface to this change — it&#39;s entirely CI/workflow config. Emit a reasoning-only receipt (no acceptanceCriteria, no targetUrl) so the pipeline still runs end to end (presence check, QA&#39;s reasoning-only path, the inline-preview fallback commit, and the PR comment) without needing to boot the web app.</p>
+    <h3>Decisions</h3><ul><li>Removed the root receipt-input.json rather than updating it in place, since a stale one describing a merged PR&#39;s task would keep getting picked up by every future PR&#39;s CI otherwise</li><li>Added timeout-minutes: 15 to the job as cheap insurance against a hung ffmpeg/dev-server process</li></ul>
+    <h3>Rejected alternatives</h3><ul><li>Leaving the old receipt-input.json in place and just updating its prNumber each time — more error-prone than removing it and letting each PR that wants a receipt add its own</li></ul>
+    <details class="why"><summary>prompt log (2 turns)</summary>
+          <div class="log"><div class="log__row log__row--user"><span class="log__role">user</span><span class="log__text">Make a new PR, that one is already merged.</span></div><div class="log__row log__row--assistant"><span class="log__role">assistant</span><span class="log__text">Restarting the branch from main and opening a small, real hardening PR that also exercises the receipts CI pipeline itself (including the new reasoning-only path) as a side effect.</span></div></div></details>
+  </section>
+
+  <section class="card">
+    <h2 class="sec">Files changed</h2>
+    
+      <div class="area"><h3>ci</h3>
+        <table class="files">
+          <tr><td class="files__path">.github/workflows/receipts.yml</td><td class="files__add">+1</td><td class="files__del">−0</td></tr><tr><td class="files__path">receipt-input.json</td><td class="files__add">+0</td><td class="files__del">−84</td></tr>
+        </table>
+      </div>
+      <div class="area"><h3>docs</h3>
+        <table class="files">
+          <tr><td class="files__path">skills/receipts/SKILL.md</td><td class="files__add">+7</td><td class="files__del">−0</td></tr>
+        </table>
+      </div>
+  </section>
+
+  <footer class="ft">
+    <span>receipts@0.1.0</span>
+    <span class="intg" title="manifest feda3c46b79664cf80f26a5b5a157aa36e21a1a79a4e29e616aa6f0c08931c52">🔒 content-hashed · feda3c46b796 · verify with <code>receipts verify</code></span>
+    
+    <span>generated by <b>Receipts</b> — watch the work.</span>
+  </footer>
+</main>
+<script>
+// Tiny no-network enhancement: remember which <details> are open within the page session only.
+// (No localStorage/sessionStorage per spec — pure in-memory, resets on reload.)
+document.addEventListener('click', function (e) {
+  var s = e.target.closest && e.target.closest('summary');
+  if (s) { /* native toggle handles it */ }
+});
+</script>
+</body>
+</html>

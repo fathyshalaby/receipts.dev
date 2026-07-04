@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "startedAt": "2026-07-04T12:08:44.630Z",
+  "durationMs": 0,
+  "videoPath": null,
+  "tracePath": null,
+  "reasoningOnly": true,
+  "results": [],
+  "summary": {
+    "pass": 0,
+    "fail": 0,
+    "inconclusive": 0,
+    "not_tested": 0
+  }
+}
