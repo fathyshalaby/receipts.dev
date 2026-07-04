@@ -16,9 +16,12 @@
 #   • BYO:    RECEIPTS_SUPABASE_URL + RECEIPTS_SUPABASE_KEY (service role)
 #   • Hosted: RECEIPTS_TOKEN (+ RECEIPTS_INGEST_URL if your CLI has no built-in default)
 #
-# The app-under-test env vars (safe to be non-secret "vars", not "secrets" —
-# they're the client-side anon key, already public in the browser bundle):
-#   • NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (repo Settings → Variables)
+# The app-under-test env vars: the anon key is meant to be public (it's already
+# in the deployed site's JS bundle; RLS is the real security boundary, not this
+# key's secrecy) — but since this repo is public, workflow run logs are too, and
+# GitHub only masks `secrets.*` values in logs, never `vars.*`. Store them as
+# Secrets anyway so nothing prints them in the clear if a build ever dumps env:
+#   • NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (repo Settings → Secrets)
 
 name: receipts
 
@@ -66,8 +69,8 @@ jobs:
           RECEIPTS_MODEL: ${{ vars.RECEIPTS_MODEL }}
           # web/'s middleware.ts calls createServerClient on every request (including
           # the marketing page) — without these it 500s before receipts qa ever loads it.
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           # If a prior PR force-added .receipts/<id>/ so reviewers could see it in the
           # diff, checkout would leave that (stale, locally-generated) data sitting here.
