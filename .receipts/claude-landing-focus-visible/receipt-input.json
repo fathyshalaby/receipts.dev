@@ -13,14 +13,38 @@
       "viewport": "desktop",
       "path": "/",
       "steps": [
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "press", "value": "Tab" },
-        { "action": "wait", "value": 200 }
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "wait",
+          "value": 200
+        }
       ]
     }
   ],
@@ -33,10 +57,23 @@
     "Per-button focus styles (e.g. only .btn:focus-visible) — rejected because the six plain nav/footer links needed the same treatment and a single shared rule covers both with less duplication"
   ],
   "promptLog": [
-    { "role": "user", "text": "Yes [open one more small PR with an actual visual change so I can see the GIF + screenshots embedded inline for real]", "ts": null },
-    { "role": "assistant", "text": "Adding visible keyboard-focus indicators to the landing page — a genuine, small accessibility gap (no :focus-visible styling existed at all) — and running receipts qa/build against it so this PR's CI run exercises the real visual-claim path end to end.", "ts": null }
+    {
+      "role": "user",
+      "text": "Yes [open one more small PR with an actual visual change so I can see the GIF + screenshots embedded inline for real]",
+      "ts": null
+    },
+    {
+      "role": "assistant",
+      "text": "Adding visible keyboard-focus indicators to the landing page — a genuine, small accessibility gap (no :focus-visible styling existed at all) — and running receipts qa/build against it so this PR's CI run exercises the real visual-claim path end to end.",
+      "ts": null
+    }
   ],
   "filesChanged": [
-    { "path": "web/app/landing.css", "additions": 6, "deletions": 0, "area": "web/landing" }
+    {
+      "path": "web/app/landing.css",
+      "additions": 6,
+      "deletions": 0,
+      "area": "web/landing"
+    }
   ]
 }
