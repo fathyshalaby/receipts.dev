@@ -148,6 +148,13 @@ Then report the overall verdict and the receipt location (and the `reportUrl` /
 (`.github/workflows/receipts.yml`) publishes to Supabase when configured,
 uploads the folder as an artefact, and comments the links on the PR.
 
+**That CI job only fires if `receipt-input.json` exists at the repo root** — if
+you commit one there so CI picks it up, remove it again once the PR merges (or
+overwrite it in the next PR). A stale one left at root describes already-merged
+work but keeps matching the "present" check forever, so every subsequent PR's
+CI would regenerate *that* old receipt (same `prNumber`, same `.receipts/pr-<n>/`
+folder) instead of one for whatever the new PR actually changed.
+
 **No publish target and you still want it visible *in* the PR description**
 (not just linked)? Force-add the receipt folder (see Notes below) and embed
 media by raw URL — but be deliberate about what actually renders inline:
