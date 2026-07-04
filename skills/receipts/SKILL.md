@@ -144,9 +144,18 @@ receipts open --in .receipts/<id>
 ```
 
 Then report the overall verdict and the receipt location (and the `reportUrl` /
-`videoUrl` if it was published). In CI, the GitHub Action
-(`.github/workflows/receipts.yml`) publishes to Supabase when configured,
-uploads the folder as an artefact, and comments the links on the PR.
+`videoUrl` if you ran `receipts publish` yourself — see §4 above). This repo's
+own CI (`.github/workflows/receipts.yml`) deliberately does **not** wire up a
+hosted publish target: it's open source, so there's a simpler option — its
+`Generate inline preview` step commits a GIF transcode of the recording + the
+receipt's own screenshots straight onto the PR branch (message tagged
+`[skip ci]` so it doesn't retrigger the workflow), and the `Comment on PR` step
+reads `manifest.json` off that commit to embed the GIF + every claim's
+before/after directly in the PR comment — no download, no account, no external
+service. Needs `permissions: contents: write`; only works for same-repo PRs
+(`GITHUB_TOKEN` can't push to a fork's branch) — falls back to a plain
+artefact-download comment if the push fails or there's nothing to commit. It
+always also uploads the folder as a workflow artefact, regardless.
 
 **That CI job only fires if `receipt-input.json` exists at the repo root** — if
 you commit one there so CI picks it up, remove it again once the PR merges (or
@@ -155,9 +164,9 @@ work but keeps matching the "present" check forever, so every subsequent PR's
 CI would regenerate *that* old receipt (same `prNumber`, same `.receipts/pr-<n>/`
 folder) instead of one for whatever the new PR actually changed.
 
-**No publish target and you still want it visible *in* the PR description**
-(not just linked)? Force-add the receipt folder (see Notes below) and embed
-media by raw URL — but be deliberate about what actually renders inline:
+**Doing this by hand** (in a repo without that CI step, or just once) — force-add
+the receipt folder (see Notes below) and embed media by raw URL, but be
+deliberate about what actually renders inline:
 
 - Screenshots: plain Markdown `![claim](raw-url)` — this just works.
 - The video: GitHub only gives you a real `<video>` player for pasted/dragged
@@ -176,17 +185,7 @@ media by raw URL — but be deliberate about what actually renders inline:
   There's no link that opens it live short of an actual publish target
   (Supabase) or hosting it yourself (e.g. GitHub Pages) — reproduce its
   sections manually in the PR body (video/GIF, before/after per claim,
-  reasoning) if you don't have one configured, same as this repo's own demo
-  PRs do.
-
-This repo's own `.github/workflows/receipts.yml` automates exactly this: when
-no Supabase target is configured, its `Generate inline preview` step does the
-GIF transcode, force-commits the receipt back onto the PR branch (message
-tagged `[skip ci]` so it doesn't retrigger the workflow), and the `Comment on
-PR` step reads `manifest.json` to embed the GIF + every claim's before/after
-inline automatically. Needs `permissions: contents: write`; only works for
-same-repo PRs (`GITHUB_TOKEN` can't push to a fork's branch) — falls back to
-the plain artefact-download comment if the push fails.
+  reasoning) if you don't have one configured.
 
 ## Graceful degradation
 

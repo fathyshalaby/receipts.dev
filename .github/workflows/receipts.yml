@@ -7,23 +7,22 @@
 # `Boot app` / install steps for your own stack instead. It expects the agent
 # to have committed `receipt-input.json` to the branch (or set the path below).
 #
-# Receipts are gitignored by default, so this workflow regenerates them in CI,
-# publishes them to Supabase (if configured), and comments the links on the PR.
-# It always also uploads the folder as an artefact, so the receipt survives even
-# when no Supabase target is set.
+# Receipts are gitignored by default, so this workflow regenerates one in CI
+# every run. No hosted publish target (Supabase) is wired up here on purpose —
+# this repo is open source and the receipt is already visible without one: the
+# "Generate inline preview" step commits a GIF + the per-claim before/after
+# screenshots straight onto the PR branch (message tagged `[skip ci]` so it
+# doesn't retrigger this workflow), and the PR comment embeds them directly —
+# no download, no external service, no account. This needs `contents: write`
+# and only works for same-repo PRs (GITHUB_TOKEN can't push to a fork's
+# branch); it degrades to a plain artefact-download comment if the push fails
+# or there's nothing to commit. The folder is always uploaded as a workflow
+# artefact too, regardless.
 #
-# To enable hosted links, set ONE of these in repo Settings → Secrets:
-#   • BYO:    RECEIPTS_SUPABASE_URL + RECEIPTS_SUPABASE_KEY (service role)
-#   • Hosted: RECEIPTS_TOKEN (+ RECEIPTS_INGEST_URL if your CLI has no built-in default)
-#
-# No publish target configured (this repo's default — open source, no hosting
-# required)? The "Generate inline preview" step below commits a GIF + the
-# per-claim before/after screenshots straight onto the PR branch (message
-# tagged `[skip ci]` so it doesn't retrigger this workflow) and the PR comment
-# embeds them directly — no download needed, no external service. This needs
-# `contents: write` and only works for same-repo PRs (GITHUB_TOKEN can't push
-# to a fork's branch); it degrades to the plain artefact-download comment if
-# the push fails or there's nothing to commit.
+# Want a hosted link instead (e.g. for a private repo, or to point at your own
+# gallery)? `receipts publish --in <dir>` (see SKILL.md §4) does that — add a
+# step here with RECEIPTS_SUPABASE_URL/RECEIPTS_SUPABASE_KEY (or RECEIPTS_TOKEN)
+# from repo secrets and point the comment step at its reportUrl/videoUrl.
 #
 # The app-under-test env vars: the anon key is meant to be public (it's already
 # in the deployed site's JS bundle; RLS is the real security boundary, not this
@@ -50,8 +49,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # Default checkout for `pull_request` is a detached merge-commit ref —
-          # need the actual branch tip so the fallback-preview commit below can
-          # push straight back onto it. workflow_dispatch has no head_ref.
+          # need the actual branch tip so the preview commit below can push
+          # straight back onto it. workflow_dispatch has no head_ref.
           ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: actions/setup-node@v4
@@ -104,39 +103,12 @@ jobs:
             exit 1
           fi
           # QA_EXIT 1 means claims genuinely failed/were inconclusive — that's expected
-          # content to report, not an infra problem, so we still build + publish it.
+          # content to report, not an infra problem, so we still build it.
 
           RECEIPT_DIR=$(ls -d .receipts/*/ | head -n1)
           echo "RECEIPT_DIR=$RECEIPT_DIR" >> "$GITHUB_ENV"
           npx receipts build --in "$RECEIPT_DIR"
 
-      # Publish to Supabase if a target is configured. Writes publish.json with the
-      # hosted report + raw video URLs; we surface them in the PR comment below.
-      - name: Publish receipt to Supabase
-        if: steps.check.outputs.present == 'true'
-        id: publish
-        env:
-          RECEIPTS_SUPABASE_URL: ${{ secrets.RECEIPTS_SUPABASE_URL }}
-          RECEIPTS_SUPABASE_KEY: ${{ secrets.RECEIPTS_SUPABASE_KEY }}
-          RECEIPTS_TOKEN: ${{ secrets.RECEIPTS_TOKEN }}
-          RECEIPTS_INGEST_URL: ${{ secrets.RECEIPTS_INGEST_URL }}
-        run: |
-          if [ -z "$RECEIPTS_SUPABASE_URL$RECEIPTS_TOKEN" ]; then
-            echo "::notice::No Supabase target configured — skipping publish (artefact still uploaded)."
-            echo "published=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if npx receipts publish --in "$RECEIPT_DIR"; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-            DIR="${RECEIPT_DIR%/}"
-            echo "REPORT_URL=$(node -p "require('./$DIR/publish.json').reportUrl")" >> "$GITHUB_ENV"
-            echo "VIDEO_URL=$(node -p "require('./$DIR/publish.json').videoUrl || ''")" >> "$GITHUB_ENV"
-          else
-            echo "::warning::receipts publish failed — falling back to the artefact link."
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # No hosted link (Supabase not configured, or the publish call failed)?
       # Commit a GIF transcode of the recording + the receipt's own screenshots
       # straight onto the PR branch, so the comment below can embed them inline
       # instead of pointing at a download. GitHub only auto-embeds a real
@@ -144,8 +116,8 @@ jobs:
       # raw URL, any container, just renders as a link — but it does autoplay
       # animated images, hence the GIF. `[skip ci]` stops this push from
       # retriggering the workflow (a GitHub-native convention, not custom logic).
-      - name: Generate inline preview (fallback, no hosted link)
-        if: steps.check.outputs.present == 'true' && steps.publish.outputs.published != 'true'
+      - name: Generate inline preview
+        if: steps.check.outputs.present == 'true'
         id: preview
         run: |
           DIR="${RECEIPT_DIR%/}"
@@ -188,9 +160,6 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const published = ${{ toJSON(steps.publish.outputs.published) }} === 'true';
-            const reportUrl = ${{ toJSON(env.REPORT_URL) }} || '';
-            const videoUrl = ${{ toJSON(env.VIDEO_URL) }} || '';
             const artefactUrl = ${{ toJSON(steps.upload.outputs.artifact-url) }} || '';
             const committed = ${{ toJSON(steps.preview.outputs.committed) }} === 'true';
             const previewSha = ${{ toJSON(env.PREVIEW_SHA) }} || '';
@@ -199,12 +168,9 @@ jobs:
 
             const lines = [marker, '### 🧾 Receipt ready — watch the work', ''];
 
-            if (published && reportUrl) {
-              lines.push(`**[▶ Open the hosted receipt](${reportUrl})** — leads with the video, then expected-vs-actual, then how the agent thought.`);
-              if (videoUrl) lines.push('', `🎥 **[Jump straight to the recording](${videoUrl})**`);
-            } else if (committed && previewSha) {
-              // No hosting configured — embed the receipt's own media inline instead,
-              // reading straight from the commit `Generate inline preview` just pushed.
+            if (committed && previewSha) {
+              // Embed the receipt's own media inline, reading straight from the
+              // commit `Generate inline preview` just pushed.
               const dir = (process.env.RECEIPT_DIR || '').replace(/\/$/, '');
               const raw = (p) => `https://raw.githubusercontent.com/${owner}/${repo}/${previewSha}/${dir}/${p}`;
               const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
