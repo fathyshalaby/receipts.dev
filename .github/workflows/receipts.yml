@@ -69,7 +69,25 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          npx receipts qa --input receipt-input.json || echo "QA reported failing claims (continuing to publish the receipt)"
+          # If a prior PR force-added .receipts/<id>/ so reviewers could see it in the
+          # diff, checkout would leave that (stale, locally-generated) data sitting here.
+          # qa only (re)writes qa-results.json/media on a real run — an infra failure
+          # (app never booted, exit 2 below) leaves whatever's on disk untouched, so
+          # without this the build step would silently re-package OLD results as if
+          # this commit had just been verified. Always start from a clean slate.
+          rm -rf .receipts
+
+          set +e
+          npx receipts qa --input receipt-input.json
+          QA_EXIT=$?
+          set -e
+          if [ "$QA_EXIT" = "2" ]; then
+            echo "::error::receipts qa hit an infrastructure failure (app never booted, or the browser failed to launch) — no receipt exists for this commit. Failing the job rather than publishing stale/absent data."
+            exit 1
+          fi
+          # QA_EXIT 1 means claims genuinely failed/were inconclusive — that's expected
+          # content to report, not an infra problem, so we still build + publish it.
+
           RECEIPT_DIR=$(ls -d .receipts/*/ | head -n1)
           echo "RECEIPT_DIR=$RECEIPT_DIR" >> "$GITHUB_ENV"
           npx receipts build --in "$RECEIPT_DIR"

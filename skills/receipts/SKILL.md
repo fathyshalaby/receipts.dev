@@ -185,6 +185,17 @@ media by raw URL — but be deliberate about what actually renders inline:
 - Receipt folders are gitignored by default (CI artefact is the canonical
   delivery). To let reviewers see the receipt in the PR diff, force-add it:
   `git add -f .receipts/<id>`.
+- **If you force-add a receipt AND this repo's CI also runs `receipts qa`
+  on the same PR, make sure CI starts from a clean `.receipts/`** (`rm -rf
+  .receipts` before the `qa` call — already done in
+  `.github/workflows/receipts.yml`). Without it: if the app-under-test fails
+  to boot in CI (`qa` exits 2 and — by design — leaves `qa-results.json`/
+  `media/` untouched rather than fabricating them), `receipts build` will
+  silently repackage your locally-committed, stale data as if it were this
+  commit's result. The workflow now also treats exit code 2 (infra failure —
+  app never booted, or the browser failed to launch) as a hard job failure
+  distinct from exit code 1 (claims genuinely failed/inconclusive, which
+  should still build + publish) — a green check must mean QA actually ran.
 - A built receipt is **tamper-evident**: `build` writes content hashes (and an
   HMAC signature if `RECEIPTS_SIGNING_KEY` is set). Run `receipts verify --in
   .receipts/<id>` to prove it wasn't edited after the fact (CI-gateable).
