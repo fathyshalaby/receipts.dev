@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "task": "Harden the receipts CI workflow: add a job timeout and remove the stale root receipt-input.json left over from a previous PR",
+  "branch": "claude/receipts-ci-hardening",
+  "prNumber": 19,
+  "targetUrl": null,
+  "startCommand": null,
+  "acceptanceCriteria": [],
+  "plan": "No visual surface to this change — it's entirely CI/workflow config. Emit a reasoning-only receipt (no acceptanceCriteria, no targetUrl) so the pipeline still runs end to end (presence check, QA's reasoning-only path, the inline-preview fallback commit, and the PR comment) without needing to boot the web app.",
+  "decisions": [
+    "Removed the root receipt-input.json rather than updating it in place, since a stale one describing a merged PR's task would keep getting picked up by every future PR's CI otherwise",
+    "Added timeout-minutes: 15 to the job as cheap insurance against a hung ffmpeg/dev-server process"
+  ],
+  "rejectedAlternatives": [
+    "Leaving the old receipt-input.json in place and just updating its prNumber each time — more error-prone than removing it and letting each PR that wants a receipt add its own"
+  ],
+  "promptLog": [
+    { "role": "user", "text": "Make a new PR, that one is already merged.", "ts": null },
+    { "role": "assistant", "text": "Restarting the branch from main and opening a small, real hardening PR that also exercises the receipts CI pipeline itself (including the new reasoning-only path) as a side effect.", "ts": null }
+  ],
+  "filesChanged": [
+    { "path": ".github/workflows/receipts.yml", "additions": 1, "deletions": 0, "area": "ci" },
+    { "path": "receipt-input.json", "additions": 0, "deletions": 84, "area": "ci" },
+    { "path": "skills/receipts/SKILL.md", "additions": 7, "deletions": 0, "area": "docs" }
+  ]
+}
