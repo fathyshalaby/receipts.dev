@@ -188,6 +188,39 @@ html:has(.lp) {
   padding: 86px 0 40px;
   text-align: center;
 }
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.lp .hero > * {
+  animation: hero-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.lp .hero > .eyebrow {
+  animation-delay: 0s;
+}
+.lp .hero > .hero__h {
+  animation-delay: 0.08s;
+}
+.lp .hero > .hero__sub {
+  animation-delay: 0.16s;
+}
+.lp .hero > .hero__cta {
+  animation-delay: 0.24s;
+}
+.lp .hero > .hero__meta {
+  animation-delay: 0.3s;
+}
+.lp .hero > .mock-wrap {
+  animation-delay: 0.36s;
+}
+
 .lp .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -206,6 +239,18 @@ html:has(.lp) {
   border-radius: 50%;
   background: var(--pass);
   box-shadow: 0 0 12px var(--pass);
+  animation: dot-pulse 2.2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px var(--pass);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 4px var(--pass);
+    opacity: 0.65;
+  }
 }
 .lp h1.hero__h {
   margin: 0 auto;
@@ -239,6 +284,33 @@ html:has(.lp) {
   font-size: 13px;
   color: var(--muted-2);
   font-family: var(--mono);
+}
+
+@media (max-width: 480px) {
+  .lp .hero {
+    padding: 56px 0 28px;
+  }
+  .lp .hero__cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lp .hero__cta .btn {
+    justify-content: center;
+    width: 100%;
+  }
+  .lp .window__body {
+    padding: 16px;
+    gap: 14px;
+  }
+  .lp .r-claims .claim {
+    grid-template-columns: auto 1fr;
+  }
+  .lp .r-claims .claim__shot {
+    display: none;
+  }
+  .lp .cta {
+    padding: 44px 20px;
+  }
 }
 
 /* ---------- receipt mockup (hero visual) ---------- */
@@ -815,11 +887,56 @@ html:has(.lp) {
   opacity: 1;
   transform: none;
 }
+
+/* staggered cascade for multi-card reveal blocks */
+.lp .grid.reveal > .feat,
+.lp .steps.reveal > .step,
+.lp .contrast.reveal > .contrast__card {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.lp .grid.reveal.in > .feat,
+.lp .steps.reveal.in > .step,
+.lp .contrast.reveal.in > .contrast__card {
+  opacity: 1;
+  transform: none;
+}
+.lp .grid.reveal > .feat:nth-child(2),
+.lp .steps.reveal > .step:nth-child(2) {
+  transition-delay: 0.08s;
+}
+.lp .grid.reveal > .feat:nth-child(3),
+.lp .steps.reveal > .step:nth-child(3) {
+  transition-delay: 0.16s;
+}
+.lp .grid.reveal > .feat:nth-child(4) {
+  transition-delay: 0.24s;
+}
+.lp .grid.reveal > .feat:nth-child(5) {
+  transition-delay: 0.32s;
+}
+.lp .grid.reveal > .feat:nth-child(6) {
+  transition-delay: 0.4s;
+}
+.lp .contrast.reveal > .contrast__card.is-us {
+  transition-delay: 0.1s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lp .reveal {
+  .lp .reveal,
+  .lp .grid.reveal > .feat,
+  .lp .steps.reveal > .step,
+  .lp .contrast.reveal > .contrast__card {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .lp .hero > * {
+    animation: none;
+  }
+  .lp .eyebrow .dot {
+    animation: none;
   }
   html:has(.lp) {
     scroll-behavior: auto;

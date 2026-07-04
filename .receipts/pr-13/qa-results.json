@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1",
+  "startedAt": "2026-07-03T21:11:52.412Z",
+  "durationMs": 17490,
+  "videoPath": "media/session.webm",
+  "tracePath": null,
+  "reasoningOnly": false,
+  "results": [
+    {
+      "acId": "ac1",
+      "claim": "On page load, the hero eyebrow badge, heading, subtitle, and CTA buttons fade and slide upward into view in a staggered sequence, ending fully visible and legible",
+      "verdict": "not_tested",
+      "judge": "none",
+      "rationale": null,
+      "screenshots": {
+        "before": "media/ac1-before.png",
+        "after": "media/ac1-after.png"
+      },
+      "frames": [
+        "media/ac1-before.png",
+        "media/ac1-step0.png",
+        "media/ac1-after.png"
+      ],
+      "adversarial": null,
+      "source": "agent",
+      "nav": {
+        "mode": "deterministic"
+      }
+    },
+    {
+      "acId": "ac2",
+      "claim": "On a 375px-wide mobile viewport, the hero's two call-to-action buttons ('Get started' and 'See a receipt') stack vertically as full-width buttons with no horizontal overflow or clipped text",
+      "verdict": "not_tested",
+      "judge": "none",
+      "rationale": null,
+      "screenshots": {
+        "before": "media/ac2-before.png",
+        "after": "media/ac2-after.png"
+      },
+      "frames": [
+        "media/ac2-before.png",
+        "media/ac2-step0.png",
+        "media/ac2-after.png"
+      ],
+      "adversarial": null,
+      "source": "agent",
+      "nav": {
+        "mode": "deterministic"
+      }
+    },
+    {
+      "acId": "ac3",
+      "claim": "Scrolling to the 'What's in a receipt' section reveals the six feature cards cascading into view one after another (staggered), rather than all appearing at once",
+      "verdict": "not_tested",
+      "judge": "none",
+      "rationale": null,
+      "screenshots": {
+        "before": "media/ac3-before.png",
+        "after": "media/ac3-after.png"
+      },
+      "frames": [
+        "media/ac3-before.png",
+        "media/ac3-step0.png",
+        "media/ac3-step1.png",
+        "media/ac3-after.png"
+      ],
+      "adversarial": null,
+      "source": "agent",
+      "nav": {
+        "mode": "deterministic"
+      }
+    }
+  ],
+  "summary": {
+    "pass": 0,
+    "fail": 0,
+    "inconclusive": 0,
+    "not_tested": 3
+  },
+  "notes": [
+    "trace.zip pruned (all claims passed; the trace is kept only on failure)."
+  ]
+}
