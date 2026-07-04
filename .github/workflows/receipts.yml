@@ -1,8 +1,11 @@
 # Receipts — visual-QA walkthrough + reasoning record for a PR.
 #
-# This is a TEMPLATE, not a hard dependency. Copy it into your own repo and
-# adjust `Boot app` / install steps for your stack. It expects the agent to have
-# committed `receipt-input.json` to the branch (or set the path below).
+# Started life as a generic template; the "Install web dependencies" and the
+# NEXT_PUBLIC_SUPABASE_* env passthrough below are specific to this repo's own
+# app under test (web/, a Next.js app whose middleware needs those to boot at
+# all). Copying this into another repo: drop that step and env pair, and adjust
+# `Boot app` / install steps for your own stack instead. It expects the agent
+# to have committed `receipt-input.json` to the branch (or set the path below).
 #
 # Receipts are gitignored by default, so this workflow regenerates them in CI,
 # publishes them to Supabase (if configured), and comments the links on the PR.
@@ -12,6 +15,10 @@
 # To enable hosted links, set ONE of these in repo Settings → Secrets:
 #   • BYO:    RECEIPTS_SUPABASE_URL + RECEIPTS_SUPABASE_KEY (service role)
 #   • Hosted: RECEIPTS_TOKEN (+ RECEIPTS_INGEST_URL if your CLI has no built-in default)
+#
+# The app-under-test env vars (safe to be non-secret "vars", not "secrets" —
+# they're the client-side anon key, already public in the browser bundle):
+#   • NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY (repo Settings → Variables)
 
 name: receipts
 
@@ -36,6 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install web app dependencies
+        run: npm ci --prefix web
+
       - name: Install Playwright browser (pinned Chromium)
         run: npx playwright install --with-deps chromium
 
@@ -54,6 +64,10 @@ jobs:
         env:
           RECEIPTS_API_KEY: ${{ secrets.RECEIPTS_API_KEY }} # optional; omit for visual-only
           RECEIPTS_MODEL: ${{ vars.RECEIPTS_MODEL }}
+          # web/'s middleware.ts calls createServerClient on every request (including
+          # the marketing page) — without these it 500s before receipts qa ever loads it.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
           npx receipts qa --input receipt-input.json || echo "QA reported failing claims (continuing to publish the receipt)"
           RECEIPT_DIR=$(ls -d .receipts/*/ | head -n1)

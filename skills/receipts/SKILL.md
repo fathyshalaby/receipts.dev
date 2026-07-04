@@ -73,6 +73,16 @@ Populate `decisions`, `rejectedAlternatives`, `plan`, and (if available)
 agent thought" half of the receipt. For `filesChanged`, you can derive
 additions/deletions from `git diff --numstat <base>...HEAD`.
 
+**Set `prNumber` whenever you know it.** `receiptId()` names the output folder
+`pr-<n>` when `prNumber` is set, or a sanitized slug of `branch` otherwise. If
+your branch name is long and also happens to appear again inside the folder
+path (it will, since `.receipts/<id>/` sits under the repo), the *duplicated*
+long slug can break GitHub's markdown link parser when you later reference
+`media/*.png` by raw URL in a PR description — it silently renders an empty
+`href`/`src` instead of erroring. `pr-<n>` is short, never repeats, and is the
+tool's own preferred id — set it as soon as you have a PR number, even if you
+write `receipt-input.json` before opening the PR (edit it in after).
+
 ### 2. Run the visual QA
 
 ```bash
@@ -137,6 +147,30 @@ Then report the overall verdict and the receipt location (and the `reportUrl` /
 `videoUrl` if it was published). In CI, the GitHub Action
 (`.github/workflows/receipts.yml`) publishes to Supabase when configured,
 uploads the folder as an artefact, and comments the links on the PR.
+
+**No publish target and you still want it visible *in* the PR description**
+(not just linked)? Force-add the receipt folder (see Notes below) and embed
+media by raw URL — but be deliberate about what actually renders inline:
+
+- Screenshots: plain Markdown `![claim](raw-url)` — this just works.
+- The video: GitHub only gives you a real `<video>` player for pasted/dragged
+  attachments (hosted under `user-images.githubusercontent.com`). A `media/*.webm`
+  or `.mp4` referenced by its raw repo URL never auto-embeds — GFM renders it as
+  a plain link, full stop, regardless of container format. If you want the
+  recording actually *playing* in the description, transcode a short animated
+  GIF and embed that instead (GFM autoplays animated images):
+  `ffmpeg -i session.webm -vf "fps=8,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" session.gif`
+  — then link the original `session.webm` (and optionally an H.264 `.mp4`
+  transcode, more broadly compatible for click-through, e.g. in Safari)
+  alongside for full quality/framerate. Re-run `receipts build` after adding
+  extra media files so the manifest's integrity hash covers them.
+- The interactive `index.html` itself can't be linked-to-render: GitHub serves
+  raw `.html` as `text/plain` (deliberately, so it can't execute as a page).
+  There's no link that opens it live short of an actual publish target
+  (Supabase) or hosting it yourself (e.g. GitHub Pages) — reproduce its
+  sections manually in the PR body (video/GIF, before/after per claim,
+  reasoning) if you don't have one configured, same as this repo's own demo
+  PRs do.
 
 ## Graceful degradation
 
