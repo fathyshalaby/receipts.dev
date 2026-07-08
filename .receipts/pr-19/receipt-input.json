@@ -15,12 +15,35 @@
     "Leaving the old receipt-input.json in place and just updating its prNumber each time — more error-prone than removing it and letting each PR that wants a receipt add its own"
   ],
   "promptLog": [
-    { "role": "user", "text": "Make a new PR, that one is already merged.", "ts": null },
-    { "role": "assistant", "text": "Restarting the branch from main and opening a small, real hardening PR that also exercises the receipts CI pipeline itself (including the new reasoning-only path) as a side effect.", "ts": null }
+    {
+      "role": "user",
+      "text": "Make a new PR, that one is already merged.",
+      "ts": null
+    },
+    {
+      "role": "assistant",
+      "text": "Restarting the branch from main and opening a small, real hardening PR that also exercises the receipts CI pipeline itself (including the new reasoning-only path) as a side effect.",
+      "ts": null
+    }
   ],
   "filesChanged": [
-    { "path": ".github/workflows/receipts.yml", "additions": 1, "deletions": 0, "area": "ci" },
-    { "path": "receipt-input.json", "additions": 0, "deletions": 84, "area": "ci" },
-    { "path": "skills/receipts/SKILL.md", "additions": 7, "deletions": 0, "area": "docs" }
+    {
+      "path": ".github/workflows/receipts.yml",
+      "additions": 1,
+      "deletions": 0,
+      "area": "ci"
+    },
+    {
+      "path": "receipt-input.json",
+      "additions": 0,
+      "deletions": 84,
+      "area": "ci"
+    },
+    {
+      "path": "skills/receipts/SKILL.md",
+      "additions": 7,
+      "deletions": 0,
+      "area": "docs"
+    }
   ]
 }
