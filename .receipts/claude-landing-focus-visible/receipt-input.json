@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1",
+  "task": "Add visible keyboard-focus indicators to the landing page",
+  "branch": "claude/landing-focus-visible",
+  "prNumber": null,
+  "targetUrl": "http://localhost:3000",
+  "startCommand": "npm --prefix web run dev",
+  "acceptanceCriteria": [
+    {
+      "id": "ac1",
+      "claim": "After tabbing through the page with the keyboard (no mouse), the currently focused nav element shows a clearly visible violet focus ring around it",
+      "navigationHint": "open the landing page root and press Tab seven times to move keyboard focus to the 'Get started' button in the nav",
+      "viewport": "desktop",
+      "path": "/",
+      "steps": [
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "press",
+          "value": "Tab"
+        },
+        {
+          "action": "wait",
+          "value": 200
+        }
+      ]
+    }
+  ],
+  "plan": "Add a single `.lp a:focus-visible, .lp button:focus-visible` rule (violet outline, offset, rounded) so links/buttons get a clear on-brand focus indicator. The landing page previously had zero focus-visible styling of its own — keyboard users fell back to whatever the browser's default (if any) rendered.",
+  "decisions": [
+    "Used :focus-visible rather than :focus so mouse clicks don't show the ring, only actual keyboard navigation does — avoids the classic 'ugly outline on every click' complaint while keeping it for keyboard users",
+    "Scoped the rule to `.lp a, .lp button` (matches every interactive element already on the page) instead of per-component rules, since the page has no custom-styled form controls needing different treatment"
+  ],
+  "rejectedAlternatives": [
+    "Per-button focus styles (e.g. only .btn:focus-visible) — rejected because the six plain nav/footer links needed the same treatment and a single shared rule covers both with less duplication"
+  ],
+  "promptLog": [
+    {
+      "role": "user",
+      "text": "Yes [open one more small PR with an actual visual change so I can see the GIF + screenshots embedded inline for real]",
+      "ts": null
+    },
+    {
+      "role": "assistant",
+      "text": "Adding visible keyboard-focus indicators to the landing page — a genuine, small accessibility gap (no :focus-visible styling existed at all) — and running receipts qa/build against it so this PR's CI run exercises the real visual-claim path end to end.",
+      "ts": null
+    }
+  ],
+  "filesChanged": [
+    {
+      "path": "web/app/landing.css",
+      "additions": 6,
+      "deletions": 0,
+      "area": "web/landing"
+    }
+  ]
+}

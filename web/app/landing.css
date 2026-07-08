@@ -58,6 +58,12 @@ html:has(.lp) {
   color: inherit;
   text-decoration: none;
 }
+.lp a:focus-visible,
+.lp button:focus-visible {
+  outline: 2px solid var(--violet-200);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
 .lp .muted {
   color: var(--muted);
 }

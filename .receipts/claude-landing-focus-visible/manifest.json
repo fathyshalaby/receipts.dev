@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "1",
+  "generatorVersion": "receipts@0.1.0",
+  "generatedAt": "2026-07-04T14:53:49.915Z",
+  "overallVerdict": "visual-only",
+  "repo": "https://github.com/fathyshalaby/receipts.dev",
+  "commit": "833badfa9bc1a2f8b579c9f85e69409f3b62bc4f",
+  "input": {
+    "schemaVersion": "1",
+    "task": "Add visible keyboard-focus indicators to the landing page",
+    "branch": "claude/landing-focus-visible",
+    "prNumber": null,
+    "targetUrl": "http://localhost:3000",
+    "startCommand": "npm --prefix web run dev",
+    "acceptanceCriteria": [
+      {
+        "id": "ac1",
+        "claim": "After tabbing through the page with the keyboard (no mouse), the currently focused nav element shows a clearly visible violet focus ring around it",
+        "navigationHint": "open the landing page root and press Tab seven times to move keyboard focus to the 'Get started' button in the nav",
+        "viewport": "desktop",
+        "path": "/",
+        "steps": [
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "press",
+            "value": "Tab"
+          },
+          {
+            "action": "wait",
+            "value": 200
+          }
+        ]
+      }
+    ],
+    "plan": "Add a single `.lp a:focus-visible, .lp button:focus-visible` rule (violet outline, offset, rounded) so links/buttons get a clear on-brand focus indicator. The landing page previously had zero focus-visible styling of its own — keyboard users fell back to whatever the browser's default (if any) rendered.",
+    "decisions": [
+      "Used :focus-visible rather than :focus so mouse clicks don't show the ring, only actual keyboard navigation does — avoids the classic 'ugly outline on every click' complaint while keeping it for keyboard users",
+      "Scoped the rule to `.lp a, .lp button` (matches every interactive element already on the page) instead of per-component rules, since the page has no custom-styled form controls needing different treatment"
+    ],
+    "rejectedAlternatives": [
+      "Per-button focus styles (e.g. only .btn:focus-visible) — rejected because the six plain nav/footer links needed the same treatment and a single shared rule covers both with less duplication"
+    ],
+    "promptLog": [
+      {
+        "role": "user",
+        "text": "Yes [open one more small PR with an actual visual change so I can see the GIF + screenshots embedded inline for real]",
+        "ts": null
+      },
+      {
+        "role": "assistant",
+        "text": "Adding visible keyboard-focus indicators to the landing page — a genuine, small accessibility gap (no :focus-visible styling existed at all) — and running receipts qa/build against it so this PR's CI run exercises the real visual-claim path end to end.",
+        "ts": null
+      }
+    ],
+    "filesChanged": [
+      {
+        "path": "web/app/landing.css",
+        "additions": 6,
+        "deletions": 0,
+        "area": "web/landing"
+      }
+    ]
+  },
+  "qa": {
+    "schemaVersion": "1",
+    "startedAt": "2026-07-04T14:53:23.488Z",
+    "durationMs": 8728,
+    "videoPath": "media/session.webm",
+    "tracePath": null,
+    "reasoningOnly": false,
+    "results": [
+      {
+        "acId": "ac1",
+        "claim": "After tabbing through the page with the keyboard (no mouse), the currently focused nav element shows a clearly visible violet focus ring around it",
+        "verdict": "not_tested",
+        "judge": "none",
+        "rationale": null,
+        "screenshots": {
+          "before": "media/ac1-before.png",
+          "after": "media/ac1-after.png"
+        },
+        "frames": [
+          "media/ac1-before.png",
+          "media/ac1-step0.png",
+          "media/ac1-step1.png",
+          "media/ac1-step2.png",
+          "media/ac1-step3.png",
+          "media/ac1-after.png"
+        ],
+        "adversarial": null,
+        "source": "agent",
+        "nav": {
+          "mode": "deterministic"
+        }
+      }
+    ],
+    "summary": {
+      "pass": 0,
+      "fail": 0,
+      "inconclusive": 0,
+      "not_tested": 1
+    },
+    "notes": [
+      "trace.zip pruned (all claims passed; the trace is kept only on failure)."
+    ]
+  },
+  "integrity": {
+    "algo": "sha256",
+    "manifestHash": "bad83827674bf2e916e62fb59f13a7f2fa5e7e9fdc34f1d5d389a49c9b626f62",
+    "files": {
+      "media/ac1-after.png": "edbd5d769e0c6808123e1edd9ba2c2818f516c92dd78c7e00c15e44fb657c07e",
+      "media/ac1-before.png": "54b0c2529e9c96afff79c466a11bfaecceb9587594313e5fb22732d88f7eeb7b",
+      "media/ac1-step0.png": "418414961dd424ab51d0a2e09ad2b70c20c44d1eaaa5326fe0b29f4fbc80f943",
+      "media/ac1-step1.png": "467e03d05d18bb871766209207df03a721d43f16eb4f0b30f2f63b28205f3551",
+      "media/ac1-step2.png": "973323a71a5ffe813a602a14de310d039a37c14c5d82840bc8a6e4af07fa84eb",
+      "media/ac1-step3.png": "433e738c1e976324a48b5e19f3b566540436a5d12323a93b5cb119830b26c91f",
+      "media/session.gif": "ab2040134ef78542e62eedf1a4b253876a8963a410e89edc871d229c5361dbc5",
+      "media/session.webm": "3e390a5eb8a2c195e38652b4b39bd500511d4a632a2d8967d40960ec2304219a",
+      "qa-results.json": "51e0747dac50d2d1f622164f341f098d8e0f62d76b98c0e6720e9137632dba8c",
+      "receipt-input.json": "874b235a2e493534a630f406b59bacfb98bb2c2a42d24be222e82e6739f1e3b2"
+    },
+    "signature": null
+  }
+}
