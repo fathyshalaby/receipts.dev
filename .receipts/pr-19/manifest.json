@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1",
   "generatorVersion": "receipts@0.1.0",
-  "generatedAt": "2026-07-04T18:39:05.706Z",
+  "generatedAt": "2026-07-08T15:35:57.044Z",
   "overallVerdict": "reasoning-only",
   "repo": "https://github.com/fathyshalaby/receipts.dev",
-  "commit": "9166a8fda01dc195b091610dc379464499ded298",
+  "commit": "c9de02c50c033487bfd84fe39ad052d4798db311",
   "input": {
     "schemaVersion": "1",
     "task": "Harden the receipts CI workflow: add a job timeout and remove the stale root receipt-input.json left over from a previous PR",
@@ -56,7 +56,7 @@
   },
   "qa": {
     "schemaVersion": "1",
-    "startedAt": "2026-07-04T18:39:04.373Z",
+    "startedAt": "2026-07-08T15:35:55.701Z",
     "durationMs": 0,
     "videoPath": null,
     "tracePath": null,
@@ -71,9 +71,9 @@
   },
   "integrity": {
     "algo": "sha256",
-    "manifestHash": "a36ddfa4599d9beb2c590c748705e38acd9d8e841b9d8c11ac75548e16adb295",
+    "manifestHash": "a3a09783dedce9a2b4d03966bc3aa6adbd864262dba85d608b4bd4f7288851dd",
     "files": {
-      "qa-results.json": "e89795fa7f8babcdfccc2121eec2a9e63fffa44e45398ae53c974eaca2d07281",
+      "qa-results.json": "80e8cf15cbef5f5d62e8f896768d1bc59f3a85910bd6200605fce71c45b7c321",
       "receipt-input.json": "d410b19246e3eb743cb78c1e98fe88772cc6669dd2a5e1bc4ee2d1bef85ca3b7"
     },
     "signature": null
