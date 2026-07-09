@@ -7,7 +7,7 @@ import type { Receipt } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<{ repo?: string; verdict?: string }>;
+type SearchParams = Promise<{ repo?: string; verdict?: string; visibility?: string }>;
 
 export default async function GalleryPage({
   searchParams,
@@ -22,7 +22,7 @@ export default async function GalleryPage({
 
   if (!user) redirect("/login");
 
-  const { repo, verdict } = await searchParams;
+  const { repo, verdict, visibility } = await searchParams;
 
   let query = supabase
     .from("receipts")
@@ -32,6 +32,7 @@ export default async function GalleryPage({
 
   if (repo) query = query.eq("repo", repo);
   if (verdict) query = query.eq("overall_verdict", verdict);
+  if (visibility) query = query.eq("visibility", visibility);
 
   const { data, error } = await query;
   const receipts = (data ?? []) as Receipt[];
@@ -64,7 +65,7 @@ export default async function GalleryPage({
               {hasFilter ? " matching your filters" : ""}
             </p>
           </div>
-          <FilterBar repos={repos} />
+          <FilterBar repos={repos} showVisibility />
         </div>
 
         {error ? (

@@ -358,6 +358,12 @@ code,
   color: var(--violet-light);
 }
 
+.card__badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .meta {
   display: flex;
   flex-wrap: wrap;

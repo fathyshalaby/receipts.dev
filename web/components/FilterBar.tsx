@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 const VERDICTS = ["pass", "fail", "visual-only", "reasoning-only"] as const;
+const VISIBILITIES = ["private", "unlisted", "public"] as const;
 
 const VERDICT_LABELS: Record<string, string> = {
   pass: "Pass",
@@ -12,12 +13,19 @@ const VERDICT_LABELS: Record<string, string> = {
   "reasoning-only": "Reasoning only",
 };
 
-export function FilterBar({ repos }: { repos: string[] }) {
+const VISIBILITY_LABELS: Record<string, string> = {
+  private: "Private only",
+  unlisted: "Link-only",
+  public: "Public",
+};
+
+export function FilterBar({ repos, showVisibility }: { repos: string[]; showVisibility?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
 
   const repo = params.get("repo") ?? "";
   const verdict = params.get("verdict") ?? "";
+  const visibility = params.get("visibility") ?? "";
 
   const update = useCallback(
     (key: string, value: string) => {
@@ -70,7 +78,28 @@ export function FilterBar({ repos }: { repos: string[] }) {
         </select>
       </div>
 
-      {(repo || verdict) && (
+      {showVisibility && (
+        <div className="field">
+          <label className="label" htmlFor="filter-visibility">
+            Visibility
+          </label>
+          <select
+            id="filter-visibility"
+            className="select"
+            value={visibility}
+            onChange={(e) => update("visibility", e.target.value)}
+          >
+            <option value="">All visibilities</option>
+            {VISIBILITIES.map((v) => (
+              <option key={v} value={v}>
+                {VISIBILITY_LABELS[v]}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {(repo || verdict || visibility) && (
         <button
           className="btn btn--ghost btn--sm"
           onClick={() => router.push("/gallery")}
