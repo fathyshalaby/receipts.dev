@@ -1,0 +1,85 @@
+name: Publish Receipt
+
+# Trigger when v0 finishes (look for a comment with receipt data)
+on:
+  workflow_run:
+    workflows: ["Your CI Workflow"]
+    types: [completed]
+
+jobs:
+  publish-receipt:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install receipts CLI
+        run: npm install -g receipts
+
+      # Example: Publish a receipt from a v0 agent task
+      - name: Publish receipt to Manifest
+        if: ${{ secrets.RECEIPTS_API_TOKEN }}
+        run: |
+          receipts publish \
+            --token=${{ secrets.RECEIPTS_API_TOKEN }} \
+            --repo="${{ github.repository }}" \
+            --pr-number="${{ github.event.pull_request.number }}" \
+            --branch="${{ github.head_ref }}" \
+            --commit="${{ github.event.workflow_run.head_sha }}" \
+            --task="CI/CD Receipt" \
+            .receipts/latest
+
+      # Alternative: Publish receipts from your own monitoring/logging
+      - name: Publish custom receipt (example)
+        if: ${{ secrets.RECEIPTS_API_TOKEN }}
+        run: |
+          # Create a manifest with your task results
+          cat > .receipts/manifest.json << 'EOF'
+          {
+            "version": "1.0",
+            "agent": "your-ci-system",
+            "input": {
+              "repo": "${{ github.repository }}",
+              "pr": "${{ github.event.pull_request.number }}",
+              "branch": "${{ github.head_ref }}"
+            },
+            "output": {
+              "verdict": "pass",
+              "summary": "All checks passed in CI"
+            },
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          receipts publish \
+            --token=${{ secrets.RECEIPTS_API_TOKEN }} \
+            --repo="${{ github.repository }}" \
+            --pr-number="${{ github.event.pull_request.number }}" \
+            .receipts
+
+# Setup Instructions:
+#
+# 1. Generate an API token in your Receipts dashboard (Settings > API Keys)
+# 2. Add it as a GitHub Actions secret: RECEIPTS_API_TOKEN
+#    - Go to: https://github.com/<owner>/<repo>/settings/secrets/actions
+#    - New Repository Secret > RECEIPTS_API_TOKEN > paste token
+#
+# 3. Customize the workflow above to your needs:
+#    - Change the `on.workflow_run.workflows` to your actual CI workflow name
+#    - Adjust the receipts publish command with your manifest location
+#    - Add filtering (e.g., only publish on main branch)
+#
+# 4. Commit and push the workflow file
+#
+# Example: Only publish receipts for PRs to main
+# Add this condition to the job:
+#   if: github.event.pull_request.base.ref == 'main'
