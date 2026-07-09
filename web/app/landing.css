@@ -76,9 +76,15 @@ html:has(.lp) {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(900px 520px at 78% -8%, rgba(247, 111, 166, 0.16), transparent 60%),
-    radial-gradient(1100px 640px at 12% -4%, rgba(139, 92, 246, 0.22), transparent 60%),
-    radial-gradient(800px 800px at 50% 120%, rgba(94, 214, 232, 0.08), transparent 60%);
+    radial-gradient(900px 520px at 78% -8%, rgba(247, 111, 166, 0.2), transparent 50%),
+    radial-gradient(1100px 640px at 12% -4%, rgba(139, 92, 246, 0.28), transparent 50%),
+    radial-gradient(800px 800px at 50% 120%, rgba(94, 214, 232, 0.12), transparent 55%);
+  animation: ambientShift 12s ease-in-out infinite;
+}
+
+@keyframes ambientShift {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.08); }
 }
 .lp > * {
   position: relative;
@@ -106,19 +112,35 @@ html:has(.lp) {
   background: var(--grad);
   color: #150d24;
   font-weight: 600;
-  box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.7);
+  box-shadow: 0 12px 32px -10px rgba(139, 92, 246, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+.lp .btn--primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.3), transparent 60%);
+  opacity: 0;
+  pointer-events: none;
 }
 .lp .btn--primary:hover {
-  box-shadow: 0 16px 40px -12px rgba(247, 111, 166, 0.7);
+  box-shadow: 0 18px 48px -12px rgba(247, 111, 166, 0.85);
+  transform: translateY(-2px);
+}
+.lp .btn--primary:active {
+  transform: translateY(0);
 }
 .lp .btn--ghost {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   border-color: var(--border);
   color: var(--fg);
+  transition: all 0.25s ease;
 }
 .lp .btn--ghost:hover {
   border-color: var(--violet);
-  background: rgba(139, 92, 246, 0.1);
+  background: rgba(139, 92, 246, 0.15);
+  box-shadow: 0 4px 16px -8px rgba(139, 92, 246, 0.4);
 }
 .lp .btn--sm {
   padding: 9px 14px;
@@ -185,8 +207,20 @@ html:has(.lp) {
 
 /* ---------- hero ---------- */
 .lp .hero {
-  padding: 86px 0 40px;
+  padding: 92px 0 48px;
   text-align: center;
+  animation: heroFadeIn 0.8s ease-out;
+}
+
+@keyframes heroFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .lp .eyebrow {
   display: inline-flex;
@@ -252,8 +286,14 @@ html:has(.lp) {
   position: absolute;
   inset: -40px -40px 40px;
   z-index: -1;
-  background: radial-gradient(60% 60% at 50% 0%, rgba(139, 92, 246, 0.3), transparent 70%);
-  filter: blur(20px);
+  background: radial-gradient(60% 60% at 50% 0%, rgba(139, 92, 246, 0.4), transparent 65%);
+  filter: blur(32px);
+  animation: mockGlow 4s ease-in-out infinite;
+}
+
+@keyframes mockGlow {
+  0%, 100% { filter: blur(32px) brightness(1); }
+  50% { filter: blur(32px) brightness(1.15); }
 }
 .lp .window {
   border: 1px solid var(--border);
@@ -262,6 +302,24 @@ html:has(.lp) {
   background: linear-gradient(180deg, var(--panel), var(--bg-2));
   box-shadow: var(--shadow);
   text-align: left;
+  transition: all 0.4s ease;
+  animation: windowSlideIn 0.6s ease-out;
+}
+
+@keyframes windowSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lp .window:hover {
+  border-color: var(--border);
+  box-shadow: 0 40px 100px -20px rgba(139, 92, 246, 0.5);
 }
 .lp .window__bar {
   display: flex;
@@ -475,14 +533,22 @@ html:has(.lp) {
   border-radius: var(--radius);
   padding: 28px;
   background: var(--panel);
+  transition: all 0.3s ease;
+}
+.lp .contrast__card:hover {
+  transform: translateY(-4px);
 }
 .lp .contrast__card.is-them {
   opacity: 0.82;
+  transition: all 0.3s ease;
+}
+.lp .contrast__card.is-them:hover {
+  opacity: 1;
 }
 .lp .contrast__card.is-us {
   background: var(--panel);
-  border-color: rgba(139, 92, 246, 0.5);
-  box-shadow: var(--shadow);
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 15px 40px -12px rgba(139, 92, 246, 0.4);
   position: relative;
 }
 .lp .contrast__k {
