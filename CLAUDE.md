@@ -48,12 +48,14 @@ receipts/assets/report.css   # styles inlined into the report at build time
 skills/receipts/       # the Claude skill (SKILL.md + references/schemas.md)
 .claude-plugin/        # plugin.json + marketplace.json (Claude Code plugin)
 web/                   # Next.js 15 gallery + landing page (separate package)
-supabase/              # migration 0001_receipts.sql + functions/ingest edge fn
+supabase/              # migration 0001_receipts.sql + functions/{ingest,_shared}
 examples/              # demo app (server.mjs) + receipt-input.json fixture
-__tests__/unit.test.ts # vitest unit tests (pure functions only)
-.github/workflows/     # receipts.yml (PR template), release.yml
+__tests__/             # unit.test.ts (pure fns) + e2e.test.ts (golden pipeline)
+.github/workflows/     # ci.yml (typecheck+test gate), receipts.yml (this
+                       #   repo's own QA+build+PR-comment pipeline), release.yml
 bin/receipts.js        # published bin shim
 docs/                  # hosting.md + SVG assets
+receipt-input.json     # tracked at repo root — see the CI footgun note below
 ```
 
 ## Commands
@@ -158,7 +160,13 @@ Output folder:
   signature payload stable, or you'll break verification of existing receipts.
 
 ### Verdicts & exit codes (CI gate)
-- `qa` exits **non-zero** if any claim **fails or is inconclusive**.
+- `qa` exits **1** if any claim **fails or is inconclusive** — expected content
+  to report, not an infra problem; `receipts build` should still run.
+- `qa` exits **2** on an **infra failure** (missing `receipt-input.json`/
+  contract file, malformed contract, app never booted, browser failed to
+  launch) — no receipt exists for this commit; treat this as a hard failure,
+  distinct from exit 1 (`receipts.yml` does exactly this: `exit 1` the job on
+  a `2`, but proceeds to `build` on a `1`).
 - **Reasoning-only** (no acceptance criteria / no `targetUrl`) and
   **visual-only** (no API key) runs exit **0**.
 - `overallVerdict` in `build.ts`: `reasoning-only` → `fail` (any fail/inconc) →
@@ -200,7 +208,13 @@ Output folder:
 - Supabase auth via `@supabase/ssr` (cookie sessions, magic-link). Browser uses
   the anon key only (RLS protects data); no service-role key in the web app.
   Client/server split: `web/lib/supabase/client.ts` vs `server.ts`;
-  `middleware.ts` refreshes the session and guards `/` and `/r/*`.
+  `middleware.ts` refreshes the session on every matched request and guards
+  `/gallery` (+`/gallery/*`) and `/r/*` — redirecting signed-out users to
+  `/login`. **`/` (the marketing landing) stays public.**
+- Routes: `/` marketing landing (`app/page.tsx` + `landing.css`) · `/login`
+  magic-link sign-in · `/auth/callback` Supabase auth callback · `/gallery`
+  the signed-in user's own receipts (list, owner-scoped) · `/r/[id]` a single
+  receipt detail view (embeds the report + video link).
 
 ## Environment variables
 
@@ -225,8 +239,42 @@ RLS, and the `receipts` storage bucket. Two publish modes share this schema:
 - **BYO** — `receipts publish` writes directly with the service-role key.
 - **Hosted** — the CLI POSTs `supabase/functions/ingest` with a bearer token;
   the edge function holds the service key so end users never do.
+  `supabase/functions/_shared/cors.ts` has the shared `corsHeaders`, a `json()`
+  response helper, and the `sha256Hex` used to match a bearer token against
+  `api_keys.token_hash`.
 
 Full setup + ingest protocol: `docs/hosting.md`.
+
+## GitHub Actions workflows
+
+- **`ci.yml`** — the test gate: on push to `main`, every PR, and dispatch,
+  installs deps + pinned Chromium, then `npm run typecheck && npm test`.
+- **`receipts.yml`** — **not a generic template; a pipeline specific to this
+  repo's own `web/` app under test.** On a PR: checks out the actual branch
+  tip (not the detached merge ref, so it can push back), installs root +
+  `web/` deps, and — only if `receipt-input.json` exists at repo root (else a
+  `::notice::` and skip) — runs `receipts qa`. `NEXT_PUBLIC_SUPABASE_URL`/
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` are passed through even though this workflow
+  never publishes, because `web/middleware.ts` 500s without them. Exit code
+  `2` from `qa` hard-fails the job; exit `1` (failing/inconclusive claims)
+  still proceeds to `build`. It then transcodes `session.webm` → a GIF via
+  `ffmpeg`, rebuilds, and **`git add -f`s + commits the receipt straight onto
+  the PR branch** (`chore: update receipt preview [skip ci]`) — that commit
+  is what the PR comment's embedded GIF/screenshots read from, not a
+  placeholder. **Deliberately does not publish to Supabase** (see the
+  workflow's own header comment) — always uploads the receipt dir as a
+  fallback artefact, and falls back to an artefact-only comment on fork PRs
+  (`GITHUB_TOKEN` can't push to a fork branch). `timeout-minutes: 15` guards
+  against a hung `ffmpeg`/dev-server process.
+  > **Footgun (documented in `SKILL.md`):** the presence check only looks for
+  > `receipt-input.json` at repo root. If one is committed there for a PR and
+  > never removed after merge, every subsequent PR's CI keeps regenerating
+  > *that stale PR's* receipt instead of skipping or reflecting the new
+  > branch. Remove (or update) the root `receipt-input.json` once its PR
+  > merges — don't leave it as a permanent fixture.
+- **`release.yml`** — on a `v*.*.*` tag (or dispatch): typecheck + test, then
+  `npm publish` (npm provenance via `id-token: write`) and a GitHub Release
+  with auto-generated notes.
 
 ## Testing
 
@@ -237,11 +285,13 @@ only — `parseNavSteps`, `buildNavPrompt`, `selectMode`, `resolveCredentials`,
 browser/network in unit tests. When you add a pure helper to the pipeline, export
 it and add a case here.
 
-`__tests__/e2e.test.ts` is the **golden integration test**: it boots the demo,
-runs the real `qa → build → verify` in a browser, and asserts the manifest,
-verdict, frames, integrity, and tamper-detection. It **self-skips when no browser
-can launch** (so plain `npm test` passes locally); `.github/workflows/ci.yml`
-installs Chromium and runs it on every PR. Run `npm test`.
+`__tests__/e2e.test.ts` is the **golden integration test** (two cases): it boots
+the demo, runs the real `qa → build → verify` in a browser, and asserts the
+manifest, verdict, frames, integrity, and tamper-detection; the second case
+signs a receipt with `RECEIPTS_SIGNING_KEY` and asserts `verify` passes with the
+right key and fails with the wrong one. It **self-skips when no browser can
+launch** (so plain `npm test` passes locally); `ci.yml` installs Chromium and
+runs it on every PR. Run `npm test`.
 
 ## Working agreements
 
@@ -253,3 +303,8 @@ installs Chromium and runs it on every PR. Run `npm test`.
   graceful-degradation modes, or the "documents, never critiques" non-goal.
 - Develop on the branch you were assigned; commit with clear messages; push only
   when asked. **Do not open a PR unless explicitly requested.**
+- Check `ROADMAP.md` before adding a feature — most of the adversarial-review
+  gap list is already shipped (✅), but a few items are tracked as still open
+  (⬜/🟡): per-claim verdict caching across runs, JPEG (vs PNG) screenshots to
+  cut receipt weight, a live hosted example receipt linked from the README,
+  and the deeper landing-page rewrite.
