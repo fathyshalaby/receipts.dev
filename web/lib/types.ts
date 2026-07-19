@@ -22,9 +22,12 @@ export interface ReceiptSummary {
 
 /** One acceptance-criteria check from manifest.qa.results[] */
 export interface QaResult {
+  acId?: string;
   claim?: string;
   verdict?: QaResultVerdict;
+  judge?: "llm" | "none";
   rationale?: string;
+  screenshots?: { before?: string | null; after?: string };
   /** Chronological frames the judge saw (before → per-step → after). */
   frames?: string[];
   /** Adversarial re-check of a claimed pass; `refuted` downgrades it. */
@@ -52,6 +55,23 @@ export interface Integrity {
   signature?: { algo: string; value: string } | null;
 }
 
+/** Mirrors receipts/scripts/types.ts's AcceptanceCriterion (input side only — no verdict). */
+export interface ManifestAcceptanceCriterion {
+  id: string;
+  claim: string;
+  navigationHint?: string | null;
+  source?: "agent" | "contract" | "issue" | "human";
+  [key: string]: unknown;
+}
+
+/** Mirrors receipts/scripts/types.ts's FileChanged. */
+export interface ManifestFileChanged {
+  path: string;
+  additions: number;
+  deletions: number;
+  area?: string | null;
+}
+
 export interface ManifestInput {
   task?: string;
   branch?: string;
@@ -59,8 +79,8 @@ export interface ManifestInput {
   plan?: string;
   decisions?: string[];
   rejectedAlternatives?: string[];
-  acceptanceCriteria?: string[];
-  filesChanged?: string[];
+  acceptanceCriteria?: ManifestAcceptanceCriterion[];
+  filesChanged?: ManifestFileChanged[];
   [key: string]: unknown;
 }
 

@@ -222,7 +222,7 @@ Both write to the same schema (`manifest.json` stays the source of truth). Apply
 
 ## 🚀 GitHub Action
 
-[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is a template: on a PR it installs Playwright, runs `qa` + `build`, **publishes to Supabase when configured**, uploads the receipt folder as an artefact, and posts/updates a PR comment linking to the **hosted report + raw video** (falling back to the artefact when no Supabase target is set). Copy it and adapt the boot step for your stack.
+[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is this repo's own pipeline (not a generic drop-in template): on a PR it installs Playwright, runs `qa` + `build`, transcodes the recording to a GIF, **commits the receipt straight onto the PR branch** so the media can be embedded inline, and posts/updates a PR comment with the walkthrough + expected-vs-actual screenshots (falling back to a plain artefact-download comment on fork PRs, where it can't push back). It doesn't publish to Supabase — this repo doesn't need a hosted link when the receipt is already visible in the PR itself. Copy it and adapt the boot step for your stack; add a `receipts publish` step with your own Supabase credentials if you want a hosted link instead.
 
 ## 🌐 Landing page
 

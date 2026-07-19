@@ -40,6 +40,19 @@ export function receiptId(prNumber: number | null, branch: string): string {
   return slug || "branch";
 }
 
+/**
+ * Sanitize an arbitrary claim id for safe use as a media filename segment.
+ * Claim ids can come from a `--contract` file authored outside the agent, so
+ * this must not merely discourage `../` — it strips every character except
+ * `[a-zA-Z0-9_-]`, leaving nothing a path can traverse with.
+ */
+export function safeFileToken(id: string): string {
+  const slug = String(id ?? "")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "claim";
+}
+
 export function generatorVersion(): string {
   try {
     const pkg = JSON.parse(
