@@ -55,8 +55,12 @@ __tests__/             # unit.test.ts (pure fns) + e2e.test.ts (golden pipeline)
                        #   repo's own QA+build+PR-comment pipeline), release.yml
 bin/receipts.js        # published bin shim
 docs/                  # hosting.md + SVG assets
-receipt-input.json     # tracked at repo root — see the CI footgun note below
 ```
+
+> No `receipt-input.json` lives at repo root by default — `receipts.yml` only
+> generates a receipt for a PR that commits one there, and it must be removed
+> (or updated) once that PR merges. See the footgun note under GitHub Actions
+> workflows below.
 
 ## Commands
 
