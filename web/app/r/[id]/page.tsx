@@ -174,7 +174,12 @@ export default async function ReceiptDetailPage({
                 <h2>Files changed</h2>
                 <div className="file-list">
                   {input.filesChanged.map((f, i) => (
-                    <code key={i}>{f}</code>
+                    <code key={i}>
+                      {f.path}{" "}
+                      <span className="muted-text">
+                        +{f.additions}/−{f.deletions}
+                      </span>
+                    </code>
                   ))}
                 </div>
               </section>

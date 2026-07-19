@@ -9,7 +9,7 @@ import type {
   Verdict,
   AcceptanceCriterion,
 } from "./types";
-import { log, parseFlags, receiptId, VIEWPORTS } from "./util";
+import { log, parseFlags, receiptId, safeFileToken, VIEWPORTS } from "./util";
 import { judgeEnabled, judgeClaim, refuteClaim, reconcileVerdict } from "./judge";
 import { navEnabled, llmNavigate, type NavOutcome } from "./nav";
 
@@ -56,12 +56,22 @@ export async function launchBrowser(): Promise<Browser> {
   }
 }
 
+/** Parse JSON from disk, exiting 2 (infra failure) rather than throwing on malformed input. */
+function readJson(p: string, what: string): any {
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch (e: any) {
+    log.err(`${what} at ${p} is not valid JSON: ${e?.message ?? e}`);
+    process.exit(2);
+  }
+}
+
 function readInput(p: string): ReceiptInput {
   if (!existsSync(p)) {
     log.err(`receipt-input.json not found at ${p}`);
     process.exit(2);
   }
-  return JSON.parse(readFileSync(p, "utf8"));
+  return readJson(p, "receipt-input.json");
 }
 
 /** Load an independent acceptance contract (array, or { acceptanceCriteria }). */
@@ -70,7 +80,7 @@ function readContract(p: string): AcceptanceCriterion[] {
     log.err(`contract file not found at ${p}`);
     process.exit(2);
   }
-  const raw = JSON.parse(readFileSync(p, "utf8"));
+  const raw = readJson(p, "contract file");
   const list: unknown = Array.isArray(raw) ? raw : raw?.acceptanceCriteria;
   if (!Array.isArray(list)) {
     log.err(`contract ${p} must be a JSON array of criteria or { "acceptanceCriteria": [...] }`);
@@ -285,12 +295,20 @@ export async function runQa(argv: string[]): Promise<number> {
     );
     return 2;
   }
-  const context = await browser.newContext({
-    viewport: VIEWPORTS.desktop,
-    recordVideo: { dir: mediaDir, size: VIEWPORTS.desktop },
-  });
-  await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
-  const page = await context.newPage();
+  let context, page;
+  try {
+    context = await browser.newContext({
+      viewport: VIEWPORTS.desktop,
+      recordVideo: { dir: mediaDir, size: VIEWPORTS.desktop },
+    });
+    await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+    page = await context.newPage();
+  } catch (e: any) {
+    await browser.close().catch(() => {});
+    killApp(appProc);
+    log.err(`could not open a browser page: ${e?.message ?? e}`);
+    return 2;
+  }
 
   const runNotes: string[] = [];
   let judgeCalls = 0;
@@ -302,6 +320,9 @@ export async function runQa(argv: string[]): Promise<number> {
     const vp = (c.viewport && VIEWPORTS[c.viewport]) || VIEWPORTS.desktop;
     await page.setViewportSize(vp);
 
+    // Ids can come from a --contract file authored outside the agent — never
+    // trust one directly into a filesystem path (path traversal).
+    const idTok = safeFileToken(c.id);
     const dest = c.path ? new URL(c.path, targetUrl).toString() : targetUrl;
     log.info(`▶ ${c.id}: ${c.claim}`);
     await page.goto(dest, { waitUntil: "domcontentloaded" });
@@ -312,7 +333,7 @@ export async function runQa(argv: string[]): Promise<number> {
     let mids = 0;
     const captureMid = async () => {
       if (mids >= MAX_MID_FRAMES) return;
-      const rel = `media/${c.id}-step${mids++}.png`;
+      const rel = `media/${idTok}-step${mids++}.png`;
       await page.screenshot({ path: join(outDir, rel), fullPage: true });
       frameRels.push(rel);
     };
@@ -323,7 +344,7 @@ export async function runQa(argv: string[]): Promise<number> {
     let nav: QaResult["nav"] = { mode: "none" };
     let navOutcome: NavOutcome | null = null;
     if (hasSteps || useLlmNav) {
-      beforeRel = `media/${c.id}-before.png`;
+      beforeRel = `media/${idTok}-before.png`;
       await page.screenshot({ path: join(outDir, beforeRel), fullPage: true });
       frameRels.push(beforeRel);
       if (hasSteps) {
@@ -336,7 +357,7 @@ export async function runQa(argv: string[]): Promise<number> {
       }
       await settle(page);
     }
-    const afterRel = `media/${c.id}-after.png`;
+    const afterRel = `media/${idTok}-after.png`;
     await page.screenshot({ path: join(outDir, afterRel), fullPage: true });
     frameRels.push(afterRel);
 
@@ -407,7 +428,7 @@ export async function runQa(argv: string[]): Promise<number> {
         } else {
           // A flaky claim should not crash the whole run — record it as inconclusive.
           log.warn(`${c.id} failed after retry: ${msg}`);
-          const afterRel = `media/${c.id}-after.png`;
+          const afterRel = `media/${safeFileToken(c.id)}-after.png`;
           res = {
             acId: c.id,
             claim: c.claim,
@@ -452,7 +473,9 @@ export async function runQa(argv: string[]): Promise<number> {
       /* video may be unavailable in some environments */
     }
   }
-  await browser.close();
+  // Always tear the app down even if the browser failed to close cleanly —
+  // otherwise a rejected close() leaves the booted dev-server process orphaned.
+  await browser.close().catch(() => {});
   killApp(appProc);
 
   const summary = summarize(results);

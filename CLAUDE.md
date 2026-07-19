@@ -202,6 +202,10 @@ Output folder:
   delivery; `git add -f .receipts/<id>` to put one in a PR diff.
 - **Acceptance claims must be observable, falsifiable, and provable from pixels.**
   Prefer "A success toast with text 'Saved' is visible" over "saving works".
+- **A claim `id` is untrusted input** — `--contract` claims come from a file
+  authored outside the agent. Never interpolate `c.id` straight into a
+  filesystem path; always run it through `safeFileToken` (`util.ts`) first,
+  as `qa.ts` does for every `media/<id>-*.png` write.
 
 ### Web app conventions
 - Next.js 15 App Router · React 19 · TypeScript. **Hand-authored CSS**
@@ -284,10 +288,10 @@ Full setup + ingest protocol: `docs/hosting.md`.
 
 `__tests__/unit.test.ts` (vitest, node env) covers **pure, exported functions**
 only — `parseNavSteps`, `buildNavPrompt`, `selectMode`, `resolveCredentials`,
-`receiptId`, `sha256Hex`, `reconcileVerdict`, `sampleFrames`, `mergeCriteria`,
-`canonicalize`, `hmacSha256Hex`, `computeManifestHash`, `signaturePayload`. No
-browser/network in unit tests. When you add a pure helper to the pipeline, export
-it and add a case here.
+`receiptId`, `safeFileToken`, `sha256Hex`, `reconcileVerdict`, `sampleFrames`,
+`mergeCriteria`, `canonicalize`, `hmacSha256Hex`, `computeManifestHash`,
+`signaturePayload`. No browser/network in unit tests. When you add a pure
+helper to the pipeline, export it and add a case here.
 
 `__tests__/e2e.test.ts` is the **golden integration test** (two cases): it boots
 the demo, runs the real `qa → build → verify` in a browser, and asserts the

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { parseNavSteps, buildNavPrompt } from "../receipts/scripts/nav";
 import { selectMode } from "../receipts/scripts/publish";
 import { resolveCredentials } from "../receipts/scripts/credentials";
-import { receiptId } from "../receipts/scripts/util";
+import { receiptId, safeFileToken } from "../receipts/scripts/util";
 import { sha256Hex } from "../receipts/scripts/tokens";
 import { reconcileVerdict, sampleFrames } from "../receipts/scripts/judge";
 import { mergeCriteria } from "../receipts/scripts/qa";
@@ -98,6 +98,20 @@ describe("receiptId", () => {
   });
   it("falls back to 'branch' for an empty name", () => {
     expect(receiptId(null, "")).toBe("branch");
+  });
+});
+
+describe("safeFileToken", () => {
+  it("leaves a normal claim id unchanged", () => {
+    expect(safeFileToken("ac1")).toBe("ac1");
+  });
+  it("strips path separators and traversal segments (contract ids are untrusted)", () => {
+    expect(safeFileToken("../../../../tmp/pwned")).not.toContain("/");
+    expect(safeFileToken("../../../../tmp/pwned")).not.toContain("..");
+  });
+  it("falls back to a placeholder when nothing safe survives", () => {
+    expect(safeFileToken("...")).toBe("claim");
+    expect(safeFileToken("")).toBe("claim");
   });
 });
 
