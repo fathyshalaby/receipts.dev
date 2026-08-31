@@ -7,6 +7,7 @@ import { runVerify } from "./verify";
 import { runDoctor } from "./doctor";
 import { runTokens } from "./tokens";
 import { runLogin, runLogout, runWhoami } from "./login";
+import { runEmbed } from "./embed";
 import { generatorVersion } from "./util";
 
 const HELP = `Receipts — watch the work.
@@ -18,6 +19,9 @@ Usage:
                    [--contract claims.json] [--no-judge] [--no-adversarial]
                    [--max-judge-calls N] [--out DIR]
   receipts build   --in .receipts/<id>
+  receipts embed   --in .receipts/<id> [--format origin|github]
+                   [--artifacts-dir DIR] [--media-base URL] [--artefact-url URL]
+                   [--report-url URL] [--out FILE]
   receipts verify  --in .receipts/<id> [--key <K>]
   receipts doctor                          (preflight: can this machine make a receipt?)
   receipts open    --in .receipts/<id>
@@ -60,6 +64,8 @@ async function main(): Promise<number> {
       return runQa(rest);
     case "build":
       return runBuild(rest);
+    case "embed":
+      return runEmbed(rest);
     case "verify":
       return runVerify(rest);
     case "doctor":

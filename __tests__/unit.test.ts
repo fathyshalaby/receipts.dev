@@ -12,6 +12,20 @@ import {
   computeManifestHash,
   signaturePayload,
 } from "../receipts/scripts/integrity";
+import {
+  artifactNameFor,
+  buildEmbed,
+  GITHUB_COMMENT_MARKER,
+  joinMediaUrl,
+  ORIGIN_WALKTHROUGH_START,
+  pickWalkthroughFile,
+  renderEmbedBody,
+  resolveFormat,
+} from "../receipts/scripts/embed";
+import type { Manifest } from "../receipts/scripts/types";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 describe("parseNavSteps", () => {
   it("keeps valid steps and coerces shape", () => {
@@ -209,5 +223,187 @@ describe("signaturePayload", () => {
       signaturePayload("M", { a: "1", b: "2" }),
     );
     expect(signaturePayload("M", { a: "1", b: "2" })).toBe("M\na:1\nb:2");
+  });
+});
+
+function fixtureManifest(over: Partial<Manifest> = {}): Manifest {
+  return {
+    schemaVersion: "1",
+    generatorVersion: "0.1.0",
+    generatedAt: "2026-01-01T00:00:00.000Z",
+    overallVerdict: "visual-only",
+    repo: "https://github.com/acme/app",
+    commit: "abc123",
+    input: {
+      schemaVersion: "1",
+      task: "Add empty state",
+      branch: "feat/empty",
+      prNumber: 13,
+      targetUrl: "http://localhost:3000",
+      startCommand: null,
+      acceptanceCriteria: [
+        { id: "ac1", claim: "Empty-state text 'No projects yet' is visible" },
+      ],
+      plan: "Render EmptyState",
+      decisions: ["Reused shared EmptyState"],
+      rejectedAlternatives: ["Onboarding wizard"],
+      promptLog: [],
+      filesChanged: [],
+    },
+    qa: {
+      schemaVersion: "1",
+      startedAt: "2026-01-01T00:00:00.000Z",
+      durationMs: 1000,
+      videoPath: "media/session.webm",
+      tracePath: null,
+      reasoningOnly: false,
+      results: [
+        {
+          acId: "ac1",
+          claim: "Empty-state text 'No projects yet' is visible",
+          verdict: "not_tested",
+          judge: "none",
+          rationale: null,
+          screenshots: { before: "media/ac1-before.png", after: "media/ac1-after.png" },
+        },
+      ],
+      summary: { pass: 0, fail: 0, inconclusive: 0, not_tested: 1 },
+    },
+    ...over,
+  };
+}
+
+describe("artifactNameFor", () => {
+  it("maps the session recording to walkthrough.*", () => {
+    expect(artifactNameFor("media/session.mp4")).toBe("walkthrough.mp4");
+    expect(artifactNameFor("media/session.webm")).toBe("walkthrough.webm");
+    expect(artifactNameFor("media/session.gif")).toBe("walkthrough.gif");
+  });
+  it("snake_cases claim screenshots", () => {
+    expect(artifactNameFor("media/ac1-before.png")).toBe("ac1_before.png");
+    expect(artifactNameFor("media/ac1-after.png")).toBe("ac1_after.png");
+  });
+});
+
+describe("joinMediaUrl / resolveFormat", () => {
+  it("joins a raw-URL base without a double slash", () => {
+    expect(joinMediaUrl("https://raw.example/sha/dir/", "media/session.gif")).toBe(
+      "https://raw.example/sha/dir/media/session.gif",
+    );
+  });
+  it("returns the relative path when no base is set", () => {
+    expect(joinMediaUrl(undefined, "media/x.png")).toBe("media/x.png");
+  });
+  it("defaults to origin when an artifacts dir is available", () => {
+    expect(resolveFormat(undefined, "/opt/cursor/artifacts")).toBe("origin");
+    expect(resolveFormat(undefined, null)).toBe("github");
+    expect(resolveFormat("github", "/opt/cursor/artifacts")).toBe("github");
+  });
+});
+
+describe("renderEmbedBody", () => {
+  const m = fixtureManifest();
+  const imageSrc = (rel: string) => `/opt/cursor/artifacts/${rel.replace("media/", "").replace(/-/g, "_")}`;
+
+  it("emits Origin-style native video + img tags", () => {
+    const body = renderEmbedBody({
+      format: "origin",
+      manifest: m,
+      videoSrc: "/opt/cursor/artifacts/walkthrough.mp4",
+      videoKind: "mp4",
+      fullQuality: [],
+      imageSrc,
+    });
+    expect(body).toContain(ORIGIN_WALKTHROUGH_START);
+    expect(body).toContain('<video src="/opt/cursor/artifacts/walkthrough.mp4"></video>');
+    expect(body).toContain('<img alt="ac1 before" src="/opt/cursor/artifacts/ac1_before.png" />');
+    expect(body).toContain("How the agent thought");
+    expect(body).toContain("Render EmptyState");
+    expect(body).not.toContain(GITHUB_COMMENT_MARKER);
+  });
+
+  it("emits a GitHub comment with GIF + markdown images", () => {
+    const raw = (rel: string) => `https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/${rel}`;
+    const body = renderEmbedBody({
+      format: "github",
+      manifest: m,
+      videoSrc: raw("media/session.gif"),
+      videoKind: "gif",
+      fullQuality: [{ label: "session.webm", href: raw("media/session.webm") }],
+      imageSrc: raw,
+    });
+    expect(body.startsWith(GITHUB_COMMENT_MARKER)).toBe(true);
+    expect(body).toContain("![recorded walkthrough](");
+    expect(body).toContain("session.gif");
+    expect(body).toContain("![before](");
+    expect(body).toContain("session.webm");
+    expect(body).toContain("pass: 0 · fail: 0");
+  });
+
+  it("falls back to text-only when GitHub cannot inline media", () => {
+    const body = renderEmbedBody({
+      format: "github",
+      manifest: m,
+      videoSrc: null,
+      videoKind: null,
+      fullQuality: [],
+      imageSrc: (rel) => rel,
+      artefactUrl: "https://github.com/acme/app/actions/runs/1/artifacts/2",
+      inlineMedia: false,
+    });
+    expect(body).toContain("A visual-QA walkthrough + reasoning record");
+    expect(body).not.toContain("<video");
+    expect(body).toContain("Download the artefact");
+  });
+});
+
+describe("pickWalkthroughFile / buildEmbed", () => {
+  it("prefers mp4 over webm for Origin, gif over both for GitHub", () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-embed-"));
+    mkdirSync(join(dir, "media"));
+    writeFileSync(join(dir, "media/session.webm"), "webm");
+    writeFileSync(join(dir, "media/session.mp4"), "mp4");
+    expect(pickWalkthroughFile(dir, false)).toEqual({ rel: "media/session.mp4", kind: "mp4" });
+    writeFileSync(join(dir, "media/session.gif"), "gif");
+    expect(pickWalkthroughFile(dir, true)).toEqual({ rel: "media/session.gif", kind: "gif" });
+  });
+
+  it("copies walkthrough media into the artifacts dir for origin format", () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-embed-in-"));
+    const arts = mkdtempSync(join(tmpdir(), "receipts-embed-arts-"));
+    mkdirSync(join(dir, "media"));
+    writeFileSync(join(dir, "media/session.mp4"), "mp4-bytes");
+    writeFileSync(join(dir, "media/ac1-before.png"), "before");
+    writeFileSync(join(dir, "media/ac1-after.png"), "after");
+    writeFileSync(join(dir, "manifest.json"), JSON.stringify(fixtureManifest()));
+
+    const { body, copied } = buildEmbed({ format: "origin", inDir: dir, artifactsDir: arts });
+    expect(copied.some((p) => p.endsWith("walkthrough.mp4"))).toBe(true);
+    expect(existsSync(join(arts, "walkthrough.mp4"))).toBe(true);
+    expect(existsSync(join(arts, "ac1_before.png"))).toBe(true);
+    expect(existsSync(join(arts, "ac1_after.png"))).toBe(true);
+    expect(body).toContain(`<video src="${join(arts, "walkthrough.mp4")}"></video>`);
+  });
+
+  it("builds a GitHub comment from --media-base", () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-embed-gh-"));
+    mkdirSync(join(dir, "media"));
+    writeFileSync(join(dir, "media/session.gif"), "gif");
+    writeFileSync(join(dir, "media/session.webm"), "webm");
+    writeFileSync(join(dir, "media/ac1-after.png"), "after");
+    const m = fixtureManifest();
+    m.qa.results[0].screenshots.before = null;
+    writeFileSync(join(dir, "manifest.json"), JSON.stringify(m));
+
+    const { body } = buildEmbed({
+      format: "github",
+      inDir: dir,
+      mediaBase: "https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13",
+      artefactUrl: "https://example.test/artefact",
+    });
+    expect(body).toContain(GITHUB_COMMENT_MARKER);
+    expect(body).toContain("https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.gif");
+    expect(body).toContain("session.webm");
+    expect(body).toContain("https://example.test/artefact");
   });
 });

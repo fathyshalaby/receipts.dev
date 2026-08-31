@@ -1,7 +1,7 @@
 {
   "name": "receipts",
   "version": "0.1.0",
-  "description": "Make your coding agents prove their work: a recorded visual-QA walkthrough + the reasoning behind a PR, packaged into one receipt a human can judge in ~90 seconds. Bundles the `receipts` skill; the CLI lives in the repo.",
+  "description": "Origin-style Demo Check for every PR: a recorded visual-QA walkthrough + expected-vs-actual + reasoning, packaged as one receipt. Bundles the `receipts` skill; the CLI lives in the repo.",
   "author": {
     "name": "Fathy Shalaby",
     "url": "https://github.com/fathyshalaby"

@@ -9,7 +9,7 @@
     {
       "name": "receipts",
       "source": "./",
-      "description": "A recorded visual-QA walkthrough + reasoning record for a PR, packaged as one self-contained artefact. Triggers on \"QA this and leave receipts on the PR\".",
+      "description": "Origin-style Demo Check for GitHub and everywhere else: a recorded visual-QA walkthrough + expected-vs-actual on the PR. Triggers when you finish tested UI work, or on \"QA this and leave receipts\".",
       "version": "0.1.0",
       "homepage": "https://github.com/fathyshalaby/nuro",
       "category": "testing",

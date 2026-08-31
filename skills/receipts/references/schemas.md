@@ -12,6 +12,8 @@ receipt-input.json    intent + reasoning (written by the agent)
 qa-results.json       visual-QA output (emitted by `receipts qa`)
 media/
   session.webm        recorded Playwright session
+  session.mp4         optional H.264 transcode (ffmpeg; Origin/Safari playback)
+  session.gif         optional GIF (CI; GitHub-comment autoplay)
   trace.zip           Playwright trace
   <acId>-before.png   per-claim before screenshot (only when the claim has steps/nav)
   <acId>-step<n>.png  per-step interaction frames (the trajectory the judge saw)

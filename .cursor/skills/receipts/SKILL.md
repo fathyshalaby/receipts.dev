@@ -45,8 +45,8 @@ Run these steps in order.
 ### 1. Write `receipt-input.json` from your session
 
 You did the work — capture **what was asked, how you reasoned, and falsifiable
-acceptance criteria**. Full schema: `references/schemas.md` (§8.1) (Claude
-plugin) or `skills/receipts/references/schemas.md` in this repo.
+acceptance criteria**. Full schema: `skills/receipts/references/schemas.md` in
+this repo.
 
 Each `acceptanceCriteria[].claim` must be **observable, falsifiable, and
 provable from pixels**. Prefer "A success toast with text 'Saved' is visible"
@@ -200,4 +200,6 @@ comment).
   regenerates the stale receipt.
 - `receipts verify --in .receipts/<id>` proves the receipt was not edited
   after `build`. `receipts doctor` preflights Node, Chromium, and API-key mode.
-- Full data contracts: `references/schemas.md`.
+- Canonical skill (Claude plugin) lives at `skills/receipts/SKILL.md` — keep
+  this file in lockstep with it.
+- Full data contracts: `skills/receipts/references/schemas.md`.
