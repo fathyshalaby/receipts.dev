@@ -7,8 +7,13 @@ import {
 } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import type { Manifest, QaResult } from "./types";
-import { esc, log, parseFlags } from "./util";
+import { esc, log, parseFlags, gitInfo } from "./util";
 import { transcodeSessionMp4 } from "./media";
+import {
+  parseGithubRepo,
+  resolveGithubToken,
+  uploadGithubAttachment,
+} from "./github-attach";
 
 export type EmbedFormat = "origin" | "github";
 
@@ -24,6 +29,8 @@ export interface EmbedOptions {
   mediaBase?: string;
   artefactUrl?: string;
   reportUrl?: string;
+  /** GitHub user-attachments URL — emitted as a bare line so GFM shows a native player. */
+  videoUrl?: string;
 }
 
 export interface EmbedResult {
@@ -144,6 +151,10 @@ export interface RenderEmbedArgs {
   imageSrc: (rel: string) => string;
   artefactUrl?: string;
   reportUrl?: string;
+  /** Native GitHub/GitLab player URL (user-attachments). Must sit on its own line. */
+  playerSrc?: string | null;
+  /** GIF autoplay fallback for GFM when there is no native player URL. */
+  gifSrc?: string | null;
   /** False when GitHub has no raw-URL base (fork PR / push failed) — text only. */
   inlineMedia?: boolean;
 }
@@ -152,6 +163,7 @@ export interface RenderEmbedArgs {
 export function renderEmbedBody(args: RenderEmbedArgs): string {
   const { format, manifest: m, videoSrc, videoKind, fullQuality, imageSrc } = args;
   const inlineMedia = args.inlineMedia !== false;
+  const playerSrc = args.playerSrc ?? null;
   const lines: string[] = [];
 
   if (format === "github") lines.push(GITHUB_COMMENT_MARKER);
@@ -184,13 +196,22 @@ export function renderEmbedBody(args: RenderEmbedArgs): string {
     return lines.join("\n");
   }
 
-  if (videoSrc && videoKind === "gif") {
-    lines.push(`![recorded walkthrough](${videoSrc})`, "");
-  } else if (videoSrc && format === "origin") {
+  if (playerSrc) {
+    // GitHub: a user-attachments URL on its own line becomes a native <video> player.
+    if (format === "origin") {
+      lines.push(`<video src="${esc(playerSrc)}"></video>`, "");
+    } else {
+      lines.push(playerSrc, "");
+    }
+  } else if (format === "origin" && videoSrc) {
     lines.push(`<video src="${esc(videoSrc)}"></video>`, "");
-  } else if (videoSrc && videoKind) {
-    // GitHub will not autoplay a raw-URL mp4/webm — link it.
-    lines.push(`[Watch the walkthrough (${videoKind})](${videoSrc})`, "");
+  } else if (videoSrc && (videoKind === "mp4" || videoKind === "webm")) {
+    lines.push(`<video src="${esc(videoSrc)}" controls></video>`, "");
+  }
+
+  const gifSrc = args.gifSrc ?? (videoKind === "gif" ? videoSrc : null);
+  if (!playerSrc && gifSrc) {
+    lines.push(`![recorded walkthrough](${gifSrc})`, "");
   }
 
   if (fullQuality.length) {
@@ -198,9 +219,11 @@ export function renderEmbedBody(args: RenderEmbedArgs): string {
       .map((f) => `[${f.label}](${f.href})`)
       .join(" · ");
     const note =
-      videoKind === "gif"
-        ? "Downscaled GIF so it actually plays here — full quality: "
-        : "Full quality: ";
+      playerSrc && videoKind === "gif"
+        ? "GIF preview · full quality: "
+        : videoKind === "gif"
+          ? "Downscaled GIF so it actually plays here — full quality: "
+          : "Full quality: ";
     lines.push(`<sub>${note}${links}</sub>`, "");
   }
 
@@ -298,23 +321,41 @@ export function buildEmbed(opts: EmbedOptions): EmbedResult {
       imageSrc,
       artefactUrl: opts.artefactUrl,
       reportUrl: opts.reportUrl,
+      playerSrc: opts.videoUrl ?? null,
     });
     return { body, copied };
   }
 
-  // GitHub: GIF inline (if present), raw URLs via --media-base.
-  // Without a media-base the comment can't resolve relative paths, so skip
-  // inline media (same fallback as a fork PR whose preview commit couldn't push).
+  // GitHub / GitLab / generic: native player URL if we uploaded to user-attachments;
+  // otherwise an HTML <video> of the MP4 (GitLab plays it; GFM may strip it and
+  // still show the GIF). Without a media-base the comment can't resolve relative
+  // paths, so skip inline media (fork PR whose preview commit couldn't push).
   const inlineMedia = !!opts.mediaBase;
   const imageSrc = (rel: string) => joinMediaUrl(opts.mediaBase, rel);
-  if (inlineMedia && video) videoSrc = joinMediaUrl(opts.mediaBase, video.rel);
+  const mp4 = existsSync(join(inDir, "media/session.mp4")) ? "media/session.mp4" : null;
+  const webm = existsSync(join(inDir, "media/session.webm")) ? "media/session.webm" : null;
+  const gif = existsSync(join(inDir, "media/session.gif")) ? "media/session.gif" : null;
+  const playerSrc = opts.videoUrl ?? null;
+
+  let videoKind: VideoKind | null = null;
+  if (inlineMedia && !playerSrc) {
+    if (mp4) {
+      videoSrc = joinMediaUrl(opts.mediaBase, mp4);
+      videoKind = "mp4";
+    } else if (webm) {
+      videoSrc = joinMediaUrl(opts.mediaBase, webm);
+      videoKind = "webm";
+    }
+  }
+  const gifSrc =
+    inlineMedia && gif && !playerSrc ? joinMediaUrl(opts.mediaBase, gif) : null;
   if (inlineMedia) {
     for (const [rel, label] of [
       ["media/session.mp4", "session.mp4"],
       ["media/session.webm", "session.webm"],
     ] as const) {
       if (!existsSync(join(inDir, rel))) continue;
-      if (video && rel === video.rel) continue;
+      if (videoSrc && joinMediaUrl(opts.mediaBase, rel) === videoSrc) continue;
       fullQuality.push({ label, href: joinMediaUrl(opts.mediaBase, rel) });
     }
   }
@@ -322,23 +363,49 @@ export function buildEmbed(opts: EmbedOptions): EmbedResult {
     format: "github",
     manifest,
     videoSrc,
-    videoKind: inlineMedia ? video?.kind ?? null : null,
+    videoKind,
     fullQuality,
     imageSrc,
     artefactUrl: opts.artefactUrl,
     reportUrl: opts.reportUrl,
+    playerSrc,
+    gifSrc,
     inlineMedia,
   });
   return { body, copied };
 }
 
-export function runEmbed(argv: string[]): number {
+export async function runEmbed(argv: string[]): Promise<number> {
   const flags = parseFlags(argv);
   const inDir = resolve((flags.in as string) || ".");
   const artifactsDir =
     (flags["artifacts-dir"] as string | undefined) || defaultArtifactsDir() || undefined;
   const format = resolveFormat(flags.format as string | undefined, artifactsDir ?? null);
   const out = flags.out as string | undefined;
+  let videoUrl = (flags["video-url"] as string | undefined) || undefined;
+
+  if (format === "github" && !videoUrl && flags["no-upload"] !== true) {
+    const nwo =
+      parseGithubRepo(flags["github-repo"] as string | undefined) ||
+      parseGithubRepo(process.env.GITHUB_REPOSITORY) ||
+      parseGithubRepo(process.env.GH_REPO) ||
+      parseGithubRepo(gitInfo().repo);
+    const token = resolveGithubToken();
+    const file = ["media/session.mp4", "media/session.webm"]
+      .map((rel) => join(inDir, rel))
+      .find((p) => existsSync(p));
+    if (nwo && token && file) {
+      const uploaded = await uploadGithubAttachment({
+        file,
+        owner: nwo.owner,
+        repo: nwo.repo,
+        token,
+      });
+      if (uploaded) videoUrl = uploaded;
+    } else if (!token) {
+      log.info("no GitHub token — Walkthrough video will use GIF / <video> fallback (not a native player).");
+    }
+  }
 
   let result: EmbedResult;
   try {
@@ -349,6 +416,7 @@ export function runEmbed(argv: string[]): number {
       mediaBase: flags["media-base"] as string | undefined,
       artefactUrl: flags["artefact-url"] as string | undefined,
       reportUrl: flags["report-url"] as string | undefined,
+      videoUrl,
     });
   } catch (e: any) {
     log.err(e?.message ?? String(e));

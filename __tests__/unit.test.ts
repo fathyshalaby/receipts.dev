@@ -22,6 +22,11 @@ import {
   renderEmbedBody,
   resolveFormat,
 } from "../receipts/scripts/embed";
+import {
+  mimeForAttachment,
+  parseGithubRepo,
+  uploadGithubAttachment,
+} from "../receipts/scripts/github-attach";
 import type { Manifest } from "../receipts/scripts/types";
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -322,22 +327,42 @@ describe("renderEmbedBody", () => {
     expect(body).not.toContain(GITHUB_COMMENT_MARKER);
   });
 
-  it("emits a GitHub comment with GIF + markdown images", () => {
+  it("emits a GitHub comment with HTML video plus GIF fallback", () => {
     const raw = (rel: string) => `https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/${rel}`;
     const body = renderEmbedBody({
       format: "github",
       manifest: m,
-      videoSrc: raw("media/session.gif"),
-      videoKind: "gif",
+      videoSrc: raw("media/session.mp4"),
+      videoKind: "mp4",
+      gifSrc: raw("media/session.gif"),
       fullQuality: [{ label: "session.webm", href: raw("media/session.webm") }],
       imageSrc: raw,
     });
     expect(body.startsWith(GITHUB_COMMENT_MARKER)).toBe(true);
+    expect(body).toContain('<video src="https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.mp4" controls></video>');
     expect(body).toContain("![recorded walkthrough](");
     expect(body).toContain("session.gif");
     expect(body).toContain("![before](");
     expect(body).toContain("session.webm");
     expect(body).toContain("pass: 0 · fail: 0");
+  });
+
+  it("emits a GitHub native player URL on its own line", () => {
+    const raw = (rel: string) => `https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/${rel}`;
+    const player = "https://github.com/user-attachments/assets/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+    const body = renderEmbedBody({
+      format: "github",
+      manifest: m,
+      videoSrc: null,
+      videoKind: null,
+      playerSrc: player,
+      gifSrc: null,
+      fullQuality: [],
+      imageSrc: raw,
+    });
+    expect(body).toContain(`\n${player}\n`);
+    expect(body).not.toContain("<video");
+    expect(body).not.toContain("![recorded walkthrough]");
   });
 
   it("falls back to text-only when GitHub cannot inline media", () => {
@@ -385,11 +410,12 @@ describe("pickWalkthroughFile / buildEmbed", () => {
     expect(body).toContain(`<video src="${join(arts, "walkthrough.mp4")}"></video>`);
   });
 
-  it("builds a GitHub comment from --media-base", () => {
+  it("builds a GitHub comment with a video tag and GIF fallback", () => {
     const dir = mkdtempSync(join(tmpdir(), "receipts-embed-gh-"));
     mkdirSync(join(dir, "media"));
     writeFileSync(join(dir, "media/session.gif"), "gif");
     writeFileSync(join(dir, "media/session.webm"), "webm");
+    writeFileSync(join(dir, "media/session.mp4"), "mp4-bytes-not-tiny-enough??");
     writeFileSync(join(dir, "media/ac1-after.png"), "after");
     const m = fixtureManifest();
     m.qa.results[0].screenshots.before = null;
@@ -402,8 +428,90 @@ describe("pickWalkthroughFile / buildEmbed", () => {
       artefactUrl: "https://example.test/artefact",
     });
     expect(body).toContain(GITHUB_COMMENT_MARKER);
+    expect(body).toContain("<video src=\"https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.mp4\" controls></video>");
     expect(body).toContain("https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.gif");
     expect(body).toContain("session.webm");
     expect(body).toContain("https://example.test/artefact");
+  });
+
+  it("uses a user-attachments video URL as a bare GitHub player line", () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-embed-player-"));
+    mkdirSync(join(dir, "media"));
+    writeFileSync(join(dir, "media/session.mp4"), "mp4");
+    writeFileSync(join(dir, "media/ac1-after.png"), "after");
+    writeFileSync(join(dir, "manifest.json"), JSON.stringify(fixtureManifest()));
+    const player = "https://github.com/user-attachments/assets/11111111-2222-3333-4444-555555555555";
+    const { body } = buildEmbed({
+      format: "github",
+      inDir: dir,
+      mediaBase: "https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13",
+      videoUrl: player,
+    });
+    expect(body).toContain(`\n${player}\n`);
+    expect(body).not.toContain("<video");
+  });
+});
+
+describe("parseGithubRepo / mimeForAttachment", () => {
+  it("parses nwo, https, and ssh remotes", () => {
+    expect(parseGithubRepo("acme/app")).toEqual({ owner: "acme", repo: "app" });
+    expect(parseGithubRepo("https://github.com/acme/app.git")).toEqual({ owner: "acme", repo: "app" });
+    expect(parseGithubRepo("git@github.com:acme/app.git")).toEqual({ owner: "acme", repo: "app" });
+    expect(parseGithubRepo("not-a-repo")).toBeNull();
+  });
+  it("maps video extensions to MIME types", () => {
+    expect(mimeForAttachment("session.mp4")).toBe("video/mp4");
+    expect(mimeForAttachment("session.webm")).toBe("video/webm");
+    expect(mimeForAttachment("notes.txt")).toBeNull();
+  });
+});
+
+describe("uploadGithubAttachment", () => {
+  it("POSTs the file and returns the user-attachments URL", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-attach-"));
+    const file = join(dir, "session.mp4");
+    writeFileSync(file, Buffer.alloc(64, 1));
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      const u = String(url);
+      if (u.includes("api.github.com/repos/")) {
+        return new Response(JSON.stringify({ id: 42 }), { status: 200 });
+      }
+      if (u.includes("uploads.github.com")) {
+        expect(init?.method).toBe("POST");
+        return new Response(
+          JSON.stringify({ url: "https://github.com/user-attachments/assets/deadbeef-0000-0000-0000-ffffffffffff" }),
+          { status: 201 },
+        );
+      }
+      throw new Error(`unexpected fetch ${u}`);
+    }) as typeof fetch;
+    const url = await uploadGithubAttachment({
+      file,
+      owner: "acme",
+      repo: "app",
+      token: "gho_test",
+      fetchImpl,
+    });
+    expect(url).toBe("https://github.com/user-attachments/assets/deadbeef-0000-0000-0000-ffffffffffff");
+  });
+
+  it("returns null when GitHub refuses the upload", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "receipts-attach-fail-"));
+    const file = join(dir, "session.mp4");
+    writeFileSync(file, Buffer.alloc(64, 1));
+    const fetchImpl = (async (url: string) => {
+      if (String(url).includes("api.github.com")) {
+        return new Response(JSON.stringify({ id: 1 }), { status: 200 });
+      }
+      return new Response("nope", { status: 404 });
+    }) as typeof fetch;
+    const url = await uploadGithubAttachment({
+      file,
+      owner: "acme",
+      repo: "app",
+      token: "ghs_actions",
+      fetchImpl,
+    });
+    expect(url).toBeNull();
   });
 });

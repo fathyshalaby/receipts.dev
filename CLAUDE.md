@@ -32,8 +32,9 @@ Shipped four ways:
 receipts/scripts/      # The CLI (TypeScript, run via tsx — NO build step)
   cli.ts               #   entry/dispatch; bin/receipts.js shells into this
   qa.ts                #   `qa`: boot app, drive Playwright per claim, record, judge
-  media.ts             #   optional ffmpeg H.264 transcode (session.webm → session.mp4)
   embed.ts             #   `embed`: Origin/GitHub Walkthrough (Demo Check) for the PR
+  github-attach.ts     #   upload session.mp4 to GitHub user-attachments (native player)
+  media.ts             #   optional ffmpeg H.264 transcode (session.webm → session.mp4)
   build.ts             #   `build`: merge → manifest.json → render index.html
   report.ts            #   self-contained HTML renderer (inline CSS/JS)
   judge.ts             #   vision-LLM verdict per claim (Anthropic API)
@@ -88,7 +89,7 @@ CLI surface (also `npx receipts <cmd>` once installed):
 ```
 receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--contract claims.json] [--no-judge] [--no-adversarial] [--max-judge-calls N] [--out DIR]
 receipts build   --in .receipts/<id>
-receipts embed   --in .receipts/<id> [--format origin|github] [--artifacts-dir DIR] [--media-base URL] [--out FILE]
+  receipts embed   --in .receipts/<id> [--format origin|github] [--artifacts-dir DIR] [--media-base URL] [--github-repo owner/repo] [--out FILE]
 receipts verify  --in .receipts/<id> [--key <K>]
 receipts doctor
 receipts open    --in .receipts/<id>
@@ -278,8 +279,9 @@ Full setup + ingest protocol: `docs/hosting.md`.
   + commits the receipt straight onto the PR branch** (`chore: update receipt
   preview [skip ci]`) — that commit is what the PR comment's embedded
   GIF/screenshots read from, not a placeholder. The comment body is generated
-  by `receipts embed --format github` (same Walkthrough as Origin, GIF because
-  GFM will not play a raw-URL video). **Deliberately does not publish to
+  by `receipts embed --format github`: it uploads `session.mp4` to GitHub
+  user-attachments for a native player when the token can mint one, else an
+  HTML `<video>` tag (GitLab) plus a GIF (GitHub GFM fallback). **Deliberately does not publish to
   Supabase** (see the workflow's own header comment) — always uploads the
   receipt dir as a fallback artefact, and falls back to an artefact-only
   comment on fork PRs (`GITHUB_TOKEN` can't push to a fork branch).
