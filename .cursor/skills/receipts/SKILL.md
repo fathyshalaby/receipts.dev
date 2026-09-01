@@ -145,7 +145,7 @@ Do **not** hand-write GIF markdown. Generate the same Walkthrough Origin shows:
 # Cursor Cloud / Origin — native <video> + <img> in the PR body
 receipts embed --in .receipts/<id> --format origin --artifacts-dir /opt/cursor/artifacts --out walkthrough.md
 
-# GitHub / GitLab / everywhere else — native video when we can attach the MP4
+# GitHub / GitLab / everywhere else — GIF in the comment (light, autoplays)
 receipts embed --in .receipts/<id> --format github --out walkthrough.md
 ```
 
@@ -157,12 +157,10 @@ receipts embed --in .receipts/<id> --format github --out walkthrough.md
 Update that section on later turns; do not bury it in a side comment if the PR
 body can hold it.
 
-**GitHub / GitLab / other hosts:** `embed --format github` uploads `session.mp4`
-to GitHub user-attachments (needs `gh auth` / PAT with push access — Actions
-`GITHUB_TOKEN` often cannot). That URL on its own line is a native video
-player, the same Demo Check Origin shows. If attach fails, the comment still
-has an HTML `<video>` tag (GitLab and others play it) plus a GIF so GitHub GFM
-has something moving.
+**GitHub / GitLab / other hosts:** `embed --format github` inlines a downscaled
+GIF (GFM autoplays it; stays light) plus expected-vs-actual stills. Full-quality
+WebM/MP4 stay as click-through links. Pass `--upload` if you want a native
+GitHub `<video>` player (`gh auth` / PAT — Actions `GITHUB_TOKEN` often cannot).
 
 **Set `prNumber` on the input** once the PR exists, then rebuild if you need
 the folder named `pr-<n>`.
@@ -185,9 +183,8 @@ comment).
 - **No API key:** visual-only (video + screenshots, verdicts `not_tested`).
 - **No ffmpeg:** skip `session.mp4`; Origin embed falls back to WebM; GitHub
   CI still transcodes a GIF when ffmpeg is installed there.
-- **GitHub video attach failed** (no token, or Actions `GITHUB_TOKEN`): the
-  Walkthrough still has an HTML `<video>` tag plus a GIF. A native GFM player
-  needs a user/PAT token (`gh auth`, `GH_TOKEN`, `RECEIPTS_GITHUB_TOKEN`).
+- **GitHub comments stay on the GIF** unless you pass `--upload`. A native GFM
+  player needs a user/PAT token (`gh auth`, `GH_TOKEN`, `RECEIPTS_GITHUB_TOKEN`).
 - **No Cursor desktop:** Playwright alone is the Demo Check. That is the point
   of this skill — Origin's experience, for the others.
 

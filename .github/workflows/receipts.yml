@@ -10,13 +10,12 @@
 # Receipts are gitignored by default, so this workflow regenerates one in CI
 # every run. No hosted publish target (Supabase) is wired up here on purpose —
 # this repo is open source and the receipt is already visible without one: the
-# "Generate inline preview" step commits a GIF + H.264 MP4 + the per-claim
-# before/after screenshots straight onto the PR branch (message tagged
-# `[skip ci]` so it doesn't retrigger this workflow), and
-# `receipts embed --format github` builds the PR comment (Walkthrough +
-# expected-vs-actual). When the token can mint a GitHub user-attachments URL
-# the comment is a native video player; otherwise HTML `<video>` + GIF. This
-# needs `contents: write`
+# "Generate inline preview" step commits a GIF + the per-claim before/after
+# screenshots straight onto the PR branch (message tagged `[skip ci]` so it
+# doesn't retrigger this workflow), and `receipts embed --format github` builds
+# the PR comment (Walkthrough + expected-vs-actual). The comment inlines a
+# downscaled GIF — GFM autoplays it and it stays light; full-quality WebM/MP4
+# stay on the receipt / artefact. This needs `contents: write`
 # and only works for same-repo PRs (GITHUB_TOKEN can't push to a fork's
 # branch); it degrades to a plain artefact-download comment if the push fails
 # or there's nothing to commit. The folder is always uploaded as a workflow
@@ -129,12 +128,6 @@ jobs:
             ffmpeg -y -i "$DIR/media/session.webm" \
               -vf "fps=8,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer" \
               "$DIR/media/session.gif"
-            # H.264 for Origin / Safari click-through; skip if already written by qa.
-            if [ ! -f "$DIR/media/session.mp4" ]; then
-              ffmpeg -y -i "$DIR/media/session.webm" \
-                -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an \
-                "$DIR/media/session.mp4" || echo "::warning::mp4 transcode failed — GIF comment still works."
-            fi
             npx receipts build --in "$DIR"
           fi
 
@@ -165,10 +158,9 @@ jobs:
         if: steps.check.outputs.present == 'true' && github.event_name == 'pull_request'
         env:
           ARTEFACT_URL: ${{ steps.upload.outputs.artifact-url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           DIR="${RECEIPT_DIR%/}"
-          ARGS=(embed --format github --in "$DIR" --out /tmp/receipts-comment.md --github-repo "${{ github.repository }}")
+          ARGS=(embed --format github --in "$DIR" --out /tmp/receipts-comment.md)
           if [ "${{ steps.preview.outputs.committed }}" = "true" ] && [ -n "${PREVIEW_SHA}" ]; then
             ARGS+=(--media-base "https://raw.githubusercontent.com/${{ github.repository }}/${PREVIEW_SHA}/${DIR}")
           fi

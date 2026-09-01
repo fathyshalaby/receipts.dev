@@ -8,8 +8,8 @@ project uses [SemVer](https://semver.org/).
 
 ### Added
 - **Demo Check for everyone else.** Origin already puts a native video Walkthrough on its PRs; the skill now does that on GitHub, Claude Code, CI, and laptops. Cursor Cloud loads [`.cursor/skills/receipts/SKILL.md`](.cursor/skills/receipts/SKILL.md); Claude Code still uses [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md) (kept in lockstep).
-- `receipts embed --in .receipts/<id> [--format origin|github]` — one Walkthrough generator. `origin` copies media into `/opt/cursor/artifacts` and emits `<video>` / `<img>` for the PR body; `github` uploads `session.mp4` to GitHub user-attachments (native player) and falls back to an HTML `<video>` tag + GIF.
-- Optional H.264 `media/session.mp4` next to Playwright's `session.webm` when `ffmpeg` is on PATH (Origin/Safari/GitHub attach). Not a hard dependency.
+- `receipts embed --in .receipts/<id> [--format origin|github]` — one Walkthrough generator. `origin` copies media into `/opt/cursor/artifacts` and emits `<video>` / `<img>` for the PR body; `github` inlines a downscaled GIF (light, GFM-autoplay) plus stills, with WebM/MP4 as click-through links. `--upload` is opt-in if you want a native GitHub player.
+- Optional H.264 `media/session.mp4` next to Playwright's `session.webm` when `ffmpeg` is on PATH (Origin/Safari). Not a hard dependency.
 
 ### Changed
 - `.github/workflows/receipts.yml` builds the PR comment with `receipts embed --format github` instead of a hand-rolled script.

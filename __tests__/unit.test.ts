@@ -327,7 +327,7 @@ describe("renderEmbedBody", () => {
     expect(body).not.toContain(GITHUB_COMMENT_MARKER);
   });
 
-  it("emits a GitHub comment with HTML video plus GIF fallback", () => {
+  it("emits a GitHub comment with a GIF (not an inline video tag)", () => {
     const raw = (rel: string) => `https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/${rel}`;
     const body = renderEmbedBody({
       format: "github",
@@ -339,11 +339,12 @@ describe("renderEmbedBody", () => {
       imageSrc: raw,
     });
     expect(body.startsWith(GITHUB_COMMENT_MARKER)).toBe(true);
-    expect(body).toContain('<video src="https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.mp4" controls></video>');
+    expect(body).not.toContain("<video");
     expect(body).toContain("![recorded walkthrough](");
     expect(body).toContain("session.gif");
     expect(body).toContain("![before](");
     expect(body).toContain("session.webm");
+    expect(body).toContain("GIF preview · full quality:");
     expect(body).toContain("pass: 0 · fail: 0");
   });
 
@@ -410,7 +411,7 @@ describe("pickWalkthroughFile / buildEmbed", () => {
     expect(body).toContain(`<video src="${join(arts, "walkthrough.mp4")}"></video>`);
   });
 
-  it("builds a GitHub comment with a video tag and GIF fallback", () => {
+  it("builds a GitHub comment with a GIF and full-quality links (no video tag)", () => {
     const dir = mkdtempSync(join(tmpdir(), "receipts-embed-gh-"));
     mkdirSync(join(dir, "media"));
     writeFileSync(join(dir, "media/session.gif"), "gif");
@@ -428,9 +429,10 @@ describe("pickWalkthroughFile / buildEmbed", () => {
       artefactUrl: "https://example.test/artefact",
     });
     expect(body).toContain(GITHUB_COMMENT_MARKER);
-    expect(body).toContain("<video src=\"https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.mp4\" controls></video>");
+    expect(body).not.toContain("<video");
     expect(body).toContain("https://raw.githubusercontent.com/acme/app/sha/.receipts/pr-13/media/session.gif");
     expect(body).toContain("session.webm");
+    expect(body).toContain("session.mp4");
     expect(body).toContain("https://example.test/artefact");
   });
 
