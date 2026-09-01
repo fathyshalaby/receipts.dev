@@ -12,6 +12,7 @@ import type {
 import { log, parseFlags, receiptId, safeFileToken, VIEWPORTS } from "./util";
 import { judgeEnabled, judgeClaim, refuteClaim, reconcileVerdict } from "./judge";
 import { navEnabled, llmNavigate, type NavOutcome } from "./nav";
+import { transcodeSessionMp4 } from "./media";
 
 // Cap intermediate (per-step) frames captured per claim so the judge payload and
 // the receipt stay bounded. before + up to this many mids + after.
@@ -473,6 +474,9 @@ export async function runQa(argv: string[]): Promise<number> {
       /* video may be unavailable in some environments */
     }
   }
+  // Optional H.264 copy so Origin / Safari can play the recording natively.
+  // Missing ffmpeg is not a failure — embed falls back to WebM / GIF.
+  if (videoRel) transcodeSessionMp4(mediaDir);
   // Always tear the app down even if the browser failed to close cleanly —
   // otherwise a rejected close() leaves the booted dev-server process orphaned.
   await browser.close().catch(() => {});

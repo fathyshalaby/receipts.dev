@@ -7,6 +7,7 @@ import { runVerify } from "./verify";
 import { runDoctor } from "./doctor";
 import { runTokens } from "./tokens";
 import { runLogin, runLogout, runWhoami } from "./login";
+import { runEmbed } from "./embed";
 import { generatorVersion } from "./util";
 
 const HELP = `Receipts — watch the work.
@@ -18,6 +19,10 @@ Usage:
                    [--contract claims.json] [--no-judge] [--no-adversarial]
                    [--max-judge-calls N] [--out DIR]
   receipts build   --in .receipts/<id>
+  receipts embed   --in .receipts/<id> [--format origin|github]
+                   [--artifacts-dir DIR] [--media-base URL] [--artefact-url URL]
+                   [--report-url URL] [--github-repo owner/repo] [--video-url URL]
+                   [--upload] [--out FILE]
   receipts verify  --in .receipts/<id> [--key <K>]
   receipts doctor                          (preflight: can this machine make a receipt?)
   receipts open    --in .receipts/<id>
@@ -32,7 +37,9 @@ Env:
   RECEIPTS_MODEL          Judge model id (default: claude-sonnet-4-6).
   RECEIPTS_CHROMIUM_PATH  System Chrome/Chromium binary (fallback if the pinned build is absent).
   RECEIPTS_MAX_JUDGE_CALLS  Cap on vision-model calls per run (cost ceiling; 0 = unlimited).
-  RECEIPTS_SIGNING_KEY    HMAC key — 'build' signs the receipt, 'verify' checks it.
+  RECEIPTS_GITHUB_TOKEN   PAT used with embed --upload to attach the MP4 as a
+                          native GitHub player. Default GitHub comments use a
+                          GIF (lighter). GH_TOKEN / GITHUB_TOKEN also work.
 
   # publish — bring-your-own Supabase (service role; bypasses RLS):
   RECEIPTS_SUPABASE_URL  Your Supabase project URL.
@@ -60,6 +67,8 @@ async function main(): Promise<number> {
       return runQa(rest);
     case "build":
       return runBuild(rest);
+    case "embed":
+      return runEmbed(rest);
     case "verify":
       return runVerify(rest);
     case "doctor":

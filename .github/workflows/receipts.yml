@@ -12,8 +12,10 @@
 # this repo is open source and the receipt is already visible without one: the
 # "Generate inline preview" step commits a GIF + the per-claim before/after
 # screenshots straight onto the PR branch (message tagged `[skip ci]` so it
-# doesn't retrigger this workflow), and the PR comment embeds them directly —
-# no download, no external service, no account. This needs `contents: write`
+# doesn't retrigger this workflow), and `receipts embed --format github` builds
+# the PR comment (Walkthrough + expected-vs-actual). The comment inlines a
+# downscaled GIF — GFM autoplays it and it stays light; full-quality WebM/MP4
+# stay on the receipt / artefact. This needs `contents: write`
 # and only works for same-repo PRs (GITHUB_TOKEN can't push to a fork's
 # branch); it degrades to a plain artefact-download comment if the push fails
 # or there's nothing to commit. The folder is always uploaded as a workflow
@@ -152,61 +154,30 @@ jobs:
           path: ${{ env.RECEIPT_DIR }}
           if-no-files-found: warn
 
+      - name: Render Walkthrough comment
+        if: steps.check.outputs.present == 'true' && github.event_name == 'pull_request'
+        env:
+          ARTEFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          DIR="${RECEIPT_DIR%/}"
+          ARGS=(embed --format github --in "$DIR" --out /tmp/receipts-comment.md)
+          if [ "${{ steps.preview.outputs.committed }}" = "true" ] && [ -n "${PREVIEW_SHA}" ]; then
+            ARGS+=(--media-base "https://raw.githubusercontent.com/${{ github.repository }}/${PREVIEW_SHA}/${DIR}")
+          fi
+          if [ -n "${ARTEFACT_URL}" ]; then
+            ARGS+=(--artefact-url "${ARTEFACT_URL}")
+          fi
+          npx receipts "${ARGS[@]}"
+
       - name: Comment on PR
         if: steps.check.outputs.present == 'true' && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const path = require('path');
-
-            const artefactUrl = ${{ toJSON(steps.upload.outputs.artifact-url) }} || '';
-            const committed = ${{ toJSON(steps.preview.outputs.committed) }} === 'true';
-            const previewSha = ${{ toJSON(env.PREVIEW_SHA) }} || '';
             const marker = '<!-- receipts-comment -->';
             const { owner, repo } = context.repo;
-
-            const lines = [marker, '### 🧾 Receipt ready — watch the work', ''];
-
-            if (committed && previewSha) {
-              // Embed the receipt's own media inline, reading straight from the
-              // commit `Generate inline preview` just pushed.
-              const dir = (process.env.RECEIPT_DIR || '').replace(/\/$/, '');
-              const raw = (p) => `https://raw.githubusercontent.com/${owner}/${repo}/${previewSha}/${dir}/${p}`;
-              const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
-              const qa = manifest.qa || {};
-              const hasGif = fs.existsSync(path.join(dir, 'media', 'session.gif'));
-
-              if (hasGif) {
-                lines.push(`![recorded walkthrough](${raw('media/session.gif')})`, '');
-                lines.push(`<sub>Downscaled GIF so it actually plays here — full quality: [session.webm](${raw('media/session.webm')})</sub>`, '');
-              }
-
-              if (Array.isArray(qa.results) && qa.results.length) {
-                lines.push('#### Acceptance criteria — expected vs actual', '');
-                for (const r of qa.results) {
-                  const before = r.screenshots && r.screenshots.before;
-                  const after = r.screenshots && r.screenshots.after;
-                  lines.push(`**${r.acId} — ${r.claim}**`, '');
-                  if (before && after) {
-                    lines.push('Before | After', ':--:|:--:', `![before](${raw(before)}) | ![after](${raw(after)})`, '');
-                  } else if (after) {
-                    lines.push(`![result](${raw(after)})`, '');
-                  }
-                }
-                const s = qa.summary || {};
-                lines.push(`<sub>pass: ${s.pass ?? 0} · fail: ${s.fail ?? 0} · inconclusive: ${s.inconclusive ?? 0} · not_tested: ${s.not_tested ?? 0}</sub>`, '');
-              } else {
-                lines.push('A reasoning-only record for this PR has been generated (no visual QA ran).', '');
-              }
-            } else {
-              lines.push('A visual-QA walkthrough + reasoning record for this PR has been generated.');
-            }
-
-            lines.push('', artefactUrl
-              ? `<sub>Prefer a local copy? [Download the artefact](${artefactUrl}) and open \`index.html\` for the full interactive report.</sub>`
-              : '<sub>Download the `receipt` artefact from the workflow run and open `index.html` for the full interactive report.</sub>');
-            const body = lines.join('\n');
+            const body = fs.readFileSync('/tmp/receipts-comment.md', 'utf8');
 
             const issue_number = context.issue.number;
             const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });

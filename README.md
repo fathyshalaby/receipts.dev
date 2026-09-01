@@ -94,7 +94,8 @@ receipts doctor                   # preflight: Node, Chromium launches, API key?
 1. Have your agent write a `receipt-input.json` ([schema](skills/receipts/references/schemas.md)) with the task, plan, decisions, and **falsifiable acceptance claims**.
 2. `receipts qa --input receipt-input.json` (set `startCommand`/`targetUrl` in the input, or pass `--url`).
 3. `receipts build --in .receipts/<id>` and open `index.html`.
-4. _(optional)_ `receipts publish --in .receipts/<id>` to push it to Supabase and get a shareable link for the PR — see [Publish to Supabase](#-publish-to-supabase-optional).
+4. `receipts embed --in .receipts/<id>` to put a Walkthrough (video + expected vs actual) on the PR — Origin-native `<video>` when artifacts are available, GitHub GIF comment otherwise.
+5. _(optional)_ `receipts publish --in .receipts/<id>` to push it to Supabase and get a shareable link for the PR — see [Publish to Supabase](#-publish-to-supabase-optional).
 
 ---
 
@@ -113,10 +114,13 @@ agent finishes on a branch
 [3] receipts build  → merges into manifest.json → renders self-contained index.html
         │
         ▼
-[4] local: open it      ·      CI: upload artefact + comment on the PR
+[4] receipts embed  → Walkthrough on the PR (Origin-native video, or GitHub GIF comment)
+        │
+        ▼
+[5] local: open it      ·      CI: upload artefact + comment on the PR
 ```
 
-Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent runs itself — or three CLI commands you run by hand.
+Four steps. **No hosting, no accounts, no telemetry.** It's a skill the agent runs itself — Origin's Demo Check, for GitHub and everyone else — or CLI commands you run by hand.
 
 ---
 
@@ -156,6 +160,8 @@ Three steps. **No hosting, no accounts, no telemetry.** It's a skill the agent r
 receipts qa      --input receipt-input.json [--url URL] [--start "CMD"] [--contract claims.json]
                  [--no-judge] [--no-adversarial] [--max-judge-calls N] [--out DIR]
 receipts build   --in .receipts/<id>
+receipts embed   --in .receipts/<id> [--format origin|github] [--artifacts-dir DIR]
+                 [--media-base URL] [--artefact-url URL] [--out FILE]
 receipts verify  --in .receipts/<id> [--key <K>]      (tamper-check the receipt)
 receipts doctor                                       (preflight: can this machine make a receipt?)
 receipts open    --in .receipts/<id>
@@ -164,7 +170,8 @@ receipts login   --token <T> | --supabase-url <U> --supabase-key <K>   ·   logo
 receipts tokens  issue|revoke|list                                    (operator — hosted mode)
 ```
 
-- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures the **chronological frame sequence** (before → per-step → after), and — with an API key — asks a vision model for a verdict per claim from those frames. A claim with deterministic `steps` runs them as-is; a claim with only a plain-language `navigationHint` is reached by **LLM-driven navigation** (it plans Playwright steps from the hint).
+- **`qa`** boots the app (if `startCommand` is set), drives Playwright per claim, records a video + trace, captures the **chronological frame sequence** (before → per-step → after), and — with an API key — asks a vision model for a verdict per claim from those frames. A claim with deterministic `steps` runs them as-is; a claim with only a plain-language `navigationHint` is reached by **LLM-driven navigation** (it plans Playwright steps from the hint). If ffmpeg is present, `qa` also writes `media/session.mp4` (H.264) next to the WebM.
+- **`embed`** writes the **Walkthrough** Origin already puts on its PRs — native video + expected-vs-actual screenshots — for GitHub, GitLab, and everywhere else. `--format origin` copies media into `--artifacts-dir` (default `/opt/cursor/artifacts` on Cursor Cloud) and emits HTML tags for the PR body. `--format github` inlines a downscaled GIF (GFM autoplays it; stays light) plus stills; pass `--upload` for a native GitHub player. CI calls this instead of hand-rolled markdown.
 - **Adversarial check:** every claim the judge marks `pass` is re-checked by a second, skeptical judge prompted to *refute* it — a successful refutation downgrades `pass → inconclusive` so a self-authored claim can't wave itself through. Disable with `--no-adversarial`.
 - **`verify`** recomputes the receipt's content hashes (and an optional HMAC signature) and **fails non-zero if anything was edited after build** — so a receipt is a tamper-evident artefact, not a folder the author can doctor. `build` writes the integrity block; set `RECEIPTS_SIGNING_KEY` to also sign it.
 - **`doctor`** is a one-command laptop preflight: it checks your Node version, that **Chromium actually launches**, and whether an API key is set — then tells you exactly what to fix. Run it first.
@@ -189,16 +196,16 @@ No telemetry. **The only network calls are the optional LLM judge and `receipts 
 
 ---
 
-## 🤖 As a Claude plugin
+## 🤖 As a Claude plugin / Cursor skill
 
-Receipts ships as a **Claude Code plugin** ([`.claude-plugin/`](.claude-plugin/)) that bundles the `receipts` skill ([`skills/receipts/SKILL.md`](skills/receipts/SKILL.md)). Install it from this repo's marketplace:
+Receipts ships as a **Claude Code plugin** ([`.claude-plugin/`](.claude-plugin/)) that bundles the `receipts` skill ([`skills/receipts/SKILL.md`](skills/receipts/SKILL.md)), and as a **Cursor Cloud skill** ([`.cursor/skills/receipts/`](.cursor/skills/receipts/)) so Origin/Cloud agents load the same Demo Check workflow. Install the Claude plugin from this repo's marketplace:
 
 ```
 /plugin marketplace add fathyshalaby/nuro
 /plugin install receipts
 ```
 
-Once installed, it triggers on prompts like _"QA this and leave receipts on the PR"_ and runs the full flow itself: write `receipt-input.json` from session → `receipts qa` → `receipts build` → _(optional)_ `receipts publish` → surface the link. The skill is also usable standalone (drop [`skills/receipts/`](skills/receipts/) into `.claude/skills/`).
+Once installed, it triggers when you **finish tested UI work** (not only when someone says "receipt") and puts an Origin-style Walkthrough on the PR: write `receipt-input.json` from session → `receipts qa` → `receipts build` → `receipts embed` → _(optional)_ `receipts publish`. The skill is also usable standalone (drop [`skills/receipts/`](skills/receipts/) into `.claude/skills/`).
 
 > **Community directory.** This repo *is* a valid marketplace, so the two commands above work for anyone today. To also list Receipts in the official [`anthropics/claude-plugins-community`](https://github.com/anthropics/claude-plugins-community) directory, submit it at **[clau.de/plugin-directory-submission](https://clau.de/plugin-directory-submission)** (point it at `github.com/fathyshalaby/nuro`). Direct PRs to that repo are auto-closed — every listing flows through claude.ai, an automated security scan, and manual approval.
 
@@ -222,7 +229,7 @@ Both write to the same schema (`manifest.json` stays the source of truth). Apply
 
 ## 🚀 GitHub Action
 
-[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is this repo's own pipeline (not a generic drop-in template): on a PR it installs Playwright, runs `qa` + `build`, transcodes the recording to a GIF, **commits the receipt straight onto the PR branch** so the media can be embedded inline, and posts/updates a PR comment with the walkthrough + expected-vs-actual screenshots (falling back to a plain artefact-download comment on fork PRs, where it can't push back). It doesn't publish to Supabase — this repo doesn't need a hosted link when the receipt is already visible in the PR itself. Copy it and adapt the boot step for your stack; add a `receipts publish` step with your own Supabase credentials if you want a hosted link instead.
+[`.github/workflows/receipts.yml`](.github/workflows/receipts.yml) is this repo's own pipeline (not a generic drop-in template): on a PR it installs Playwright, runs `qa` + `build`, transcodes the recording to a GIF, **commits the receipt straight onto the PR branch** so the media can be embedded inline, and posts/updates a PR comment generated by `receipts embed --format github` (Walkthrough GIF + expected-vs-actual — the lightweight GFM version of the Demo Check Origin shows natively). It doesn't publish to Supabase — this repo doesn't need a hosted link when the receipt is already visible in the PR itself. Copy it and adapt the boot step for your stack; add a `receipts publish` step with your own Supabase credentials if you want a hosted link instead.
 
 ## 🌐 Landing page
 
